@@ -2,7 +2,7 @@
 
 # Luca — Assistente Financeiro
 
-**Seu controle financeiro pessoal, privado e local.**
+**Controle financeiro pessoal, privado e local.**
 
 Organize contas, cartões, receitas, despesas, metas e valores entre amigos em um único painel. Os dados ficam em um banco SQLite no seu computador.
 
