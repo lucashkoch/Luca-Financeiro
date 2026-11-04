@@ -1,70 +1,59 @@
-# Histórico de versões
+# Changelog
 
-## 1.3.0 — 2026-11-04
+## 1.4.3 — correções de recorrências e preferências
 
-### Telegram
-- Integração com a Telegram Bot API oficial por long polling, sem webhook ou endereço público.
-- Autorização obrigatória por ID numérico, limitada a conversas privadas; grupos e outros usuários são ignorados.
-- Registro de receitas, depósitos, despesas e transferências a partir de mensagens em linguagem natural.
-- Confirmação/cancelamento por botões inline ou comandos; confirmações expiram após 15 minutos.
-- Consultas de saldos, contas, gastos e valores entre amigos.
-- Recepção de mensagens de voz/áudio, download limitado a 20 MB e transcrição opcional local por faster-whisper.
-- Lembretes de acertos com amigos enviados pelo Telegram e marcados após envio bem-sucedido.
-- Deduplicação de updates recebidos para evitar processamento duplicado em reinicializações.
+- Corrigido o erro `Cannot read properties of null (reading 'closest')` ao salvar recorrências: o formulário agora é capturado antes das operações assíncronas.
+- Corrigido o salvamento da forma de pagamento em recorrências, incluindo seu identificador; a geração das parcelas recorrentes preserva o meio selecionado.
+- Adicionado cadastro de categorias por perfil, com arquivamento e reativação sem apagar o histórico de lançamentos.
+- Categorias cadastradas ficam disponíveis em lançamentos, recorrências e limites mensais.
+- Adicionada preferência de forma de pagamento padrão, ao lado da conta padrão.
+- Novos lançamentos e novas recorrências já abrem com banco e forma de pagamento padrão selecionados.
+- Corrigidas outras rotinas assíncronas de formulários que poderiam usar `event.currentTarget` depois do envio.
+- Preferência de pagamento padrão aplicada também às interpretações sem forma de pagamento explícita no assistente web e no Telegram.
+- 84 testes automatizados aprovados.
 
-### Windows e operação
-- Serviço de execução em segundo plano com logs rotativos em `logs/luca-service.log`.
-- Instalação e remoção de inicialização automática no logon via Agendador de Tarefas do Windows.
-- Proteção contra iniciar outra instância quando o painel já está ativo.
-- Painel mostra o estado da integração Telegram sem revelar o token.
-- WhatsApp removido desta versão para manter o escopo pessoal e evitar a manutenção de um adaptador inadequado ao uso pretendido.
+## 1.4.2 — 2026-11-04
 
-### Segurança e confiabilidade
-- Sem token ou ID autorizado, o bot não lê nem altera dados financeiros; `/start` e `/id` informam somente o ID do remetente para configuração.
-- Somente o ID configurado, em conversa privada, pode usar comandos e consultar dados.
-- Toda movimentação financeira apresenta resumo e exige confirmação explícita.
-- O Luca não remove webhooks existentes automaticamente, pois o Telegram não permite long polling com webhook ativo.
-- Token, base SQLite, logs e arquivos `.env` permanecem fora do controle de versão.
+### Interpretação de lançamentos
+- Ampliação das formas naturais de expressar despesas, receitas, depósitos e transferências.
+- Reconhecimento de valores falados por extenso, valores compactos (`2k`, `2,5k`), contos/pilas e centavos falados.
+- Suporte adicional a datas relativas e escritas por extenso, além de variações de parcelamento (`5x`, `5 vezes`, `cinco parcelas`).
+- Limpeza de descrições com remoção de datas, horários, palavras de pagamento e referências de conta.
+- Nova categoria **Esportes** e regras contextuais para compras de tênis, atividades esportivas, Vendas e reembolsos.
+- Transferências como “mandei/enviei da conta A para conta B” só são inferidas quando as duas contas estão reconhecidas.
+- Corrigida colisão entre valores como `R$ 99` e o aplicativo 99; o número não classifica por si só como Transporte.
 
-### Compatibilidade
-- Nenhuma migração destrutiva do banco. A versão reutiliza as tabelas de ações pendentes e de atualizações processadas.
-- O painel e a API continuam locais em `127.0.0.1`.
-
-## 1.2.1 — 2026-11-04
-
-### Interface
-- Formulário de acertos entre amigos simplificado: pessoa, tipo, descrição e valor ficam em primeiro plano.
-- Vencimento, lembrete e observações foram agrupados em uma seção opcional recolhível.
-- Datas passaram a aceitar digitação direta no formato brasileiro `dd/mm/aaaa`, com máscara automática e validação de calendário.
-- Datas de movimentações, transferências, recorrências e quitações sugerem a data de hoje por padrão.
-- Datas de vencimento e lembrete sugerem hoje ao abrir os detalhes opcionais, mas não são gravadas sem que o usuário abra essa seção.
-- Corrigido o estilo que aplicava largura fixa ao botão Cancelar e fazia o texto sobrepor o botão Salvar.
-- Rodapé dos modais agora tem dimensões e comportamento responsivo, com botões sem sobreposição em telas estreitas.
+### Áudio e transcrição
+- Modelo padrão alterado para `medium`, com contexto de português brasileiro e vocabulário financeiro.
+- Cache do modelo Whisper carregado para evitar recarregar a rede neural a cada áudio.
+- Instalador usa o interpretador exato da `.venv` usada pelo serviço e valida `faster-whisper` e `ctranslate2`.
+- Novo diagnóstico autenticado em `/assistant/audio/status`, com caminho do Python, versões e erro de importação.
+- Telegram diferencia biblioteca ausente de falha de DLL, dependência interna, download do modelo ou decodificação do áudio.
 
 ### Compatibilidade
-- Datas digitadas são convertidas para ISO (`AAAA-MM-DD`) antes de enviar à API; o formato do banco de dados e os dados existentes não mudam.
-- Nenhuma migração de banco de dados necessária.
+- Sem alteração de schema e sem migração de banco.
+- 75 testes automatizados aprovados nesta release.
 
-## 1.2.0 — 2026-11-03
+## 1.4.1 — 2026-11-04
 
-- Interpretação determinística mais precisa de receitas, depósitos, despesas e transferências entre contas.
-- Depósitos e receitas não exigem forma de pagamento para serem registrados.
-- Reconhecimento de nomes de contas com variações naturais, como “conta mãe” para “Conta da mãe”.
-- Transferências identificam origem e destino e podem ser confirmadas diretamente na conversa.
-- Cartão, forma de pagamento e tipo de movimentação são validados antes da confirmação.
-- Ollama passa a refinar somente descrição e categoria, sem poder alterar valor, tipo, forma de pagamento ou contas envolvidas.
-- Exemplos da tela do assistente atualizados para entradas, despesas e transferências.
+### Aparência e personalização
+- Configurações por perfil para fonte (Inter, Manrope, Space Grotesk ou fonte do sistema).
+- Escala geral da interface de 90%, 100%, 110% ou 120%.
+- Densidade confortável ou compacta, persistida no banco privado de cada usuário.
+- Prévia da tipografia antes de salvar as preferências.
 
-## 1.1.0 — 2026-11-03
+### Visão geral
+- Dois indicadores dedicados no dashboard: **A receber de pessoas** e **A pagar a pessoas**.
+- Valores calculados a partir dos compromissos pendentes, já descontando quitações parciais.
+- Compromissos entre pessoas não são somados ao saldo bancário nem ao patrimônio líquido.
 
-- Área **Contas com amigos** para valores a receber e a pagar.
-- Cadastro de compromissos por pessoa, com data de vencimento e lembrete.
-- Registro de pagamentos/recebimentos parciais e totais, com histórico de quitações.
-- Totalizadores a receber, a pagar e saldo líquido por pessoa e no consolidado.
-- Lembretes no painel, com opção de notificação do navegador e dispensa diária.
-- Rebranding completo para **Luca — Assistente Financeiro**.
-- Estrutura de documentação e automação de testes para GitHub.
+### Economias e investimentos
+- Nova área baseada nas contas existentes dos tipos Poupança e Investimento.
+- Totalizadores separados de economias, investimentos e total combinado.
+- Ações de aplicar/guardar e resgatar/retirar por transferência entre contas.
+- Exibição das metas existentes para acompanhar objetivos.
+- Nenhuma tabela financeira duplicada: saldos vêm do razão das contas.
 
-## 1.0.0 — 2026-11-03
-
-- Primeira versão funcional do controle financeiro local.
+### Compatibilidade e testes
+- Nenhuma migração destrutiva ou alteração necessária nas tabelas de movimentações.
+- 63 testes automatizados aprovados na suíte desta release.

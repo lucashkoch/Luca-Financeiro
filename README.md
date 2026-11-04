@@ -1,317 +1,239 @@
-<div align="center">
-
 # Luca — Assistente Financeiro
 
-**Controle financeiro pessoal, privado e local.**
+![Version](https://img.shields.io/badge/version-1.4.3-7569e6)
+![Tests](https://img.shields.io/badge/tests-84%20passing-22a06b)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)
+![License](https://img.shields.io/badge/license-MIT-blue)
 
-Organize contas, cartões, receitas, despesas, metas e valores entre amigos em um único painel. Os dados ficam em um banco SQLite no seu computador.
+Assistente financeiro em português brasileiro, com painel web local, banco SQLite, perfis isolados, integração opcional com Telegram e inteligência artificial local. Foi pensado para registrar e consultar finanças sem assinatura de uma API de IA.
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/API-FastAPI-009688?logo=fastapi&logoColor=white)
-![SQLite](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-blue.svg)
-![Tests](https://img.shields.io/badge/tests-40%20passing-brightgreen)
+> **Importante sobre hospedagem:** a instalação padrão escuta somente em `127.0.0.1` e é privada ao computador. O suporte a vários perfis separa os dados dentro da mesma instalação, mas para amigos acessarem o painel de outros computadores será necessário hospedar a aplicação em um servidor com HTTPS, armazenamento persistente e configuração segura. Não exponha o servidor HTTP local diretamente à internet.
 
-</div>
+## Atualização 1.4.2 — linguagem natural e transcrição
 
----
+- O parser aceita valores em português por extenso (por exemplo, “cento e vinte reais”), abreviações como `2,5k`, valores com centavos falados e formas diferentes de ordenar ação, conta, data e pagamento.
+- A limpeza de descrições remove referências temporais e de pagamento, mantendo o motivo do gasto; futebol, quadra, academia e outras atividades ganham a categoria **Esportes**.
+- Transferências coloquiais como “mandei da Caixa pra Nubank” só são tratadas como movimentação interna quando as duas contas são identificadas.
+- O áudio usa `medium` por padrão, contexto em português brasileiro com vocabulário financeiro, VAD, busca por feixe e cache do modelo carregado. O primeiro uso baixa o modelo localmente.
+- O instalador usa explicitamente o Python da pasta `.venv`, valida o carregamento de `faster-whisper`/`ctranslate2` e há diagnóstico em `/assistant/audio/status`. Erros de modelo/DLL deixam de ser confundidos com pacote ausente.
+- Nenhuma migração de banco de dados.
 
-## Sobre o projeto
+## Recursos
 
-O **Luca** é uma aplicação de organização financeira pessoal que roda localmente no Windows. A ideia é reunir o controle do dia a dia — contas, cartões, gastos, planejamento e acertos com amigos — em uma interface simples, sem depender de uma assinatura mensal ou de um banco de dados na nuvem.
+### Finanças do dia a dia
+- Múltiplas contas financeiras: corrente, poupança, carteira, investimento e outros tipos.
+- Receitas, despesas, depósitos, compras parceladas e transferências internas.
+- Formas de pagamento cadastráveis. Por padrão: **Débito, Crédito e Pix**. É possível definir uma forma de pagamento e uma conta/banco padrão para novos lançamentos.
+- Forma de pagamento vinculada ao lançamento e à conta bancária usada para acompanhar a movimentação.
+- Compras no crédito podem ser registradas em uma conta normal, sem exigir cadastro de cartão separado.
+- Quitação das compras no crédito sem duplicar a despesa original.
+- Cadastro de categorias próprias, com arquivamento e reativação sem apagar o histórico.
+- Limites mensais por categoria, metas de economia e lançamentos recorrentes.
+- Área **Devendo / A receber**, com compromissos, pagamentos parciais, histórico, vencimentos e lembretes.
+- Área **Economias & investimentos**, com visão consolidada das contas de poupança e investimento, operações de aplicação/resgate por transferência e metas vinculadas ao planejamento. Os valores são alimentados manualmente pelas contas, sem cotação de mercado automática ou rentabilidade calculada por corretora; o mesmo dinheiro aparece uma única vez no patrimônio.
 
-A aplicação básica funciona sem IA. Recursos opcionais usam modelos locais pelo Ollama e transcrição local de áudio pelo faster-whisper.
+### Painel e relatórios
+- Tema escuro por padrão, com alternância para tema claro.
+- Personalização por perfil da fonte (Inter, Manrope, Space Grotesk ou sistema), escala da interface e densidade confortável/compacta.
+- Resumo geral com total a receber de pessoas e total a pagar a pessoas, sem misturar esses compromissos ao saldo bancário.
+- Tipografia maior e menus adaptados a telas menores.
+- Filtros de lançamentos por mês, ano, intervalo de datas ou todo o período.
+- Datas digitáveis no formato `dd/mm/aaaa`.
+- Relatórios por categoria, conta, período e forma de pagamento.
+- Importação CSV e exportação de lançamentos.
+- Backup do banco por perfil.
 
-> **Privacidade:** o Luca não acessa sua conta bancária, não realiza pagamentos e não sincroniza dados com instituições financeiras. Você informa os valores manualmente. O banco SQLite não é criptografado pelo aplicativo; proteja seu computador e seus backups.
+### Assistente conversacional
+- Interpretador determinístico de português brasileiro para entradas, despesas e transferências.
+- Extração de valor, data, conta, descrição, categoria, forma de pagamento e parcelas.
+- Prévia e confirmação antes de gravar qualquer lançamento ou operação administrativa.
+- Perguntas de esclarecimento quando houver ambiguidade; o sistema evita inventar conta, forma de pagamento ou intenção.
+- Catálogo de frases e exemplos em [`docs/catalogo-de-frases.md`](docs/catalogo-de-frases.md).
+- Integração opcional com Ollama para apoio contextual local.
+- Integração opcional com faster-whisper para transcrição local de áudio.
 
-## Funcionalidades
+### Telegram
+- Um único bot Telegram pode atender vários perfis.
+- Cada usuário vincula sua própria conta Telegram com um código de uso único.
+- O bot escolhe automaticamente o banco privado do usuário vinculado.
+- Consultas e cadastros de contas, lançamentos, formas de pagamento, limites, metas, recorrências e acertos.
+- Ações de edição e exclusão suportadas para operações comuns, sempre com confirmação.
+- Lembretes de compromissos enviados pelo bot.
+- Long polling: não exige domínio, webhook ou porta pública.
 
-### Visão geral
-- Saldo consolidado de contas e carteiras.
-- Dívidas registradas nos cartões e patrimônio líquido estimado.
-- Resultado mensal, movimentações recentes e principais categorias.
-
-### Contas e cartões
-- Quantas contas forem necessárias, com nomes livres (por exemplo: Nubank, Caixa, Conta da mãe e Carteira).
-- Saldo inicial, saldo atualizado e seleção de conta padrão.
-- Cartões de crédito com limite, dias de fechamento e vencimento.
-- Faturas por mês e compras parceladas em até 36 vezes.
-- Pagamento de fatura por transferência, sem contabilizar a quitação como uma segunda despesa.
-
-### Lançamentos e planejamento
-- Registro de receitas e despesas por conta, categoria, data e forma de pagamento.
-- Edição, exclusão, busca e filtros de histórico.
-- Transferências entre contas sem duplicar receitas ou despesas.
-- Orçamentos mensais por categoria.
-- Metas de economia com contribuições e retiradas.
-- Recorrências semanais, mensais e anuais, geradas somente após ação explícita do usuário.
-
-### Contas com amigos
-- Registro de valores que você **tem a receber** e de valores que **precisa pagar** a amigos ou outras pessoas.
-- Agrupamento automático dos registros pelo nome da pessoa.
-- Total a receber, total a pagar e saldo líquido consolidado e por pessoa.
-- Data de vencimento e data personalizada para lembrete.
-- Pagamentos e recebimentos parciais ou totais, com histórico de quitações.
-- Status de aberto, parcial, próximo do vencimento, atrasado e quitado.
-- Lembretes dentro do Luca e notificações do navegador, quando autorizadas.
-
-**Importante sobre o livro de amigos:** ele é separado do fluxo bancário. Registrar um pagamento nessa área reduz o valor pendente do compromisso, mas não altera automaticamente o saldo de uma conta nem os relatórios de receitas e despesas. Isso evita duplicidade e deixa explícito que o registro é um controle de acerto entre pessoas. Quando o dinheiro efetivamente entrar ou sair da sua conta, registre a movimentação financeira correspondente separadamente.
-
-**Importante sobre lembretes:** eles aparecem no painel quando a data escolhida chega. As notificações do Windows/navegador dependem de permissão e de o Luca estar aberto no navegador. Nesta versão não existe um serviço em segundo plano que avise com o computador desligado ou com o navegador fechado.
-
-### Assistente e áudio (opcionais)
-- Entende entradas/receitas, depósitos, despesas e transferências entre contas em linguagem natural.
-- Reconhece expressões como “depositei”, “fiz um depósito”, “entrada”, “recebi”, “caiu”, “gastei”, “paguei”, “comprei” e “transferi”.
-- Associa nomes e variações comuns de contas cadastradas, por exemplo “conta mãe” para “Conta da mãe”.
-- Não exige forma de pagamento para depósitos e receitas; em despesas, a forma pode ficar como “não informada” quando você não mencionar.
-- Transferências pedem origem e destino e são confirmadas como transferência, sem virar receita ou despesa.
-- Mostra uma prévia e exige confirmação antes de salvar qualquer lançamento.
-- Consultas rápidas sobre saldos, gastos mensais e categorias.
-- Ollama opcional para refinar descrição e categoria. O modelo não pode alterar valor, tipo de movimento, conta ou forma de pagamento identificados pelas regras validadas.
-- Gravação no navegador e transcrição local com faster-whisper.
-
-### Telegram (opcional)
-- Integração com a Bot API oficial por long polling, sem domínio, webhook, túnel ou hospedagem pública.
-- Acesso permitido somente ao ID numérico configurado, em conversa privada.
-- Registros por texto ou áudio com prévia e confirmação por botões no chat.
-- Comandos para saldo, contas, lembretes, ajuda, confirmar e cancelar.
-- Lembretes de acertos com amigos enviados pelo bot.
-- O bot continua funcionando sem Ollama; o modelo de linguagem é complementar e executado localmente.
-
-### Dados e relatórios
-- Banco SQLite local.
-- Relatórios mensais e gráficos de receitas, despesas e categorias.
-- Exportação e importação de lançamentos em CSV.
-- Backup consistente do banco, mesmo com o Luca em execução.
-- Migrações incrementais para preservar bancos anteriores.
-
-## Tecnologias
-
-| Tecnologia | Papel |
-|---|---|
-| Python 3.11+ | Backend e regras financeiras |
-| FastAPI | API local e documentação interativa |
-| SQLite | Armazenamento local |
-| HTML, CSS e JavaScript | Interface web responsiva |
-| Ollama (opcional) | Modelo de linguagem executado localmente |
-| faster-whisper (opcional) | Transcrição local de áudio |
-| pytest | Testes automatizados |
+### Perfis e isolamento de dados
+- Primeiro cadastro cria o administrador.
+- Administrador pode gerar convites de uso único para novos perfis.
+- Cada usuário tem seu próprio arquivo SQLite em `data/users/`.
+- Banco central `data/luca-users.db` guarda autenticação, sessões, convites e vínculos Telegram; não guarda o razão financeiro de todos os usuários.
+- Sessões com cookie HttpOnly e senhas derivadas com scrypt.
+- Consultas web e ações do Telegram são executadas no contexto do perfil autenticado.
 
 ## Instalação no Windows
 
-### Requisitos
+Requisitos: Windows 10/11, Python 3.11 ou superior e conexão com a internet para instalar as dependências.
 
-- Windows 10 ou 11.
-- Python 3.11 ou superior instalado e disponível no PATH (`Add Python to PATH`).
-- Internet na primeira execução para instalar as dependências.
-
-### Iniciar
-
-1. Baixe o ZIP do repositório ou clone o projeto.
-2. Extraia a pasta em um local permanente.
+1. Baixe ou clone o repositório.
+2. Extraia em uma pasta permanente, por exemplo `C:\Luca`.
 3. Execute `iniciar.bat`.
-4. Na primeira inicialização, o script cria o ambiente virtual, instala as dependências e cria `.env` a partir de `.env.example`.
-5. O painel será aberto em `http://127.0.0.1:8000`.
+4. O instalador cria `.venv`, instala `requirements.txt` e cria `.env` a partir de `.env.example` se necessário.
+5. Abra `http://127.0.0.1:8000`.
+6. Na primeira execução, crie o perfil administrador. Se houver um banco legado `data/luca.db`, o primeiro administrador o importa para seu banco privado e uma cópia de backup é feita antes da migração.
 
-Para encerrar, volte à janela do terminal e pressione `Ctrl+C`.
+O painel não se conecta automaticamente a bancos. Cadastre manualmente os saldos atuais e registre movimentações. Nunca informe senhas bancárias, códigos de autenticação ou números completos de cartões.
 
-A documentação interativa da API fica em `http://127.0.0.1:8000/docs`.
+## Primeira configuração e perfis
 
-### Primeiro cadastro
+### Administrador
 
-1. Em **Minhas contas**, cadastre suas contas e carteiras com os saldos atuais.
-2. Cadastre cartões de crédito separadamente, informando a dívida atual, limite e datas de fechamento/vencimento quando souber.
-3. Em **Configurações**, escolha uma conta padrão para facilitar os lançamentos.
-4. Em **Contas com amigos**, registre valores pendentes com a direção correta: a receber ou a pagar.
-5. Faça alguns lançamentos de teste e confira os saldos antes de inserir todo seu histórico.
+Na primeira abertura, crie nome, e-mail e senha (mínimo de 10 caracteres). Se a aplicação já tiver usuários cadastrados, o cadastro inicial fica bloqueado.
 
-## Configuração opcional de IA local
+### Convidar um amigo
 
-1. Instale o Ollama para Windows: <https://ollama.com/download>.
-2. Execute `instalar_ollama.bat` para baixar o modelo `qwen2.5:3b`.
-3. Abra `.env` e altere `OLLAMA_ENABLED=0` para `OLLAMA_ENABLED=1`.
+1. Entre no perfil administrador.
+2. Abra **Configurações → Usuários e convites → Gerar convite**.
+3. Envie o código ao amigo por um canal privado. O convite é de uso único e expira após 7 dias.
+4. O amigo abre a mesma instância do Luca, informa o código, cria seu nome, e-mail e senha e entra em um perfil vazio.
+5. O arquivo de dados desse usuário será separado do seu.
+
+**Limite da instalação local:** com `iniciar.bat`, a aplicação é acessível apenas no computador onde está instalada. Amigos em outros dispositivos precisam de uma instância hospedada com HTTPS. Para essa implantação, configure proxy HTTPS, armazenamento persistente, `LUCA_COOKIE_SECURE=1`, backups e controle de acesso. O projeto não inclui um serviço de hospedagem gerenciada.
+
+## Telegram
+
+1. Crie um bot com [@BotFather](https://t.me/BotFather).
+2. Coloque o token em `TELEGRAM_BOT_TOKEN` no `.env`.
+3. Reinicie o Luca.
+4. Entre no perfil do Luca e abra **Configurações → Luca no Telegram → Gerar código de vínculo**.
+5. Abra o bot em conversa privada e envie `/vincular CÓDIGO`.
+6. Cada usuário deve gerar seu próprio código no seu perfil. Um vínculo não dá acesso aos dados de outro perfil.
+
+Não é necessário `TELEGRAM_ALLOWED_USER_ID`; essa configuração antiga foi substituída por vínculos individuais. O bot ignora grupos e só aceita conversas privadas vinculadas.
+
+Comandos principais:
+
+| Comando | Função |
+|---|---|
+| `/start` | Iniciar o bot |
+| `/ajuda` | Catálogo resumido de exemplos |
+| `/saldo` | Saldo consolidado |
+| `/contas` | Saldos individuais |
+| `/credito` | Compras no crédito ainda não quitadas |
+| `/lancamentos` | Últimos lançamentos e IDs |
+| `/limites` | Limites mensais |
+| `/metas` | Metas de economia |
+| `/devendo` | Valores a pagar e a receber |
+| `/formas` | Formas de pagamento ativas |
+| `/recorrencias` | Regras recorrentes |
+| `/lembretes` | Lembretes vencidos ou do dia |
+| `/confirmar` e `/cancelar` | Resolver ação pendente |
+| `/vincular CÓDIGO` | Vincular este Telegram ao perfil |
+
+O catálogo completo de linguagem está em [`docs/catalogo-de-frases.md`](docs/catalogo-de-frases.md). Ações financeiras ou administrativas criam uma prévia com botões **Confirmar** e **Cancelar**. A prévia expira em 15 minutos.
+
+### Privacidade do Telegram
+
+O texto e os áudios passam pela infraestrutura do Telegram. Conversas com bots **não** são Secret Chats com criptografia ponta a ponta. Áudios são baixados temporariamente e transcritos localmente; o arquivo temporário é removido após o processamento. Não envie senhas bancárias ou dados sigilosos.
+
+## IA local e áudio
+
+### Ollama (opcional)
+
+1. Instale o Ollama.
+2. Execute `instalar_ollama.bat` para baixar o modelo configurado.
+3. Em `.env`, defina `OLLAMA_ENABLED=1`.
 4. Reinicie o Luca.
 
-O modelo pode ser alterado em `OLLAMA_MODEL`. O serviço local padrão é `http://127.0.0.1:11434`. A integração utiliza a API local do Ollama; consulte <https://docs.ollama.com/api/chat>.
+O parser local determinístico continua sendo a primeira camada. O modelo não pode substituir silenciosamente o valor, o tipo ou a conta identificados pelo parser. O Luca não usa API paga de IA.
 
-A qualidade e a velocidade dependem do modelo, da memória e do processador disponíveis. O registro básico não depende do Ollama.
+### Áudio (opcional)
 
-## Transcrição de áudio (opcional)
+Execute `instalar_audio.bat` e reinicie o Luca. O primeiro uso baixa o modelo Whisper configurado em `WHISPER_MODEL`. A transcrição roda no computador. Para enviar áudio pelo Telegram, o serviço do Luca precisa estar ativo.
 
-1. Inicie o Luca ao menos uma vez.
-2. Execute `instalar_audio.bat`.
-3. No painel, autorize o microfone para gravar; no Telegram, envie uma mensagem de voz.
-4. Revise a transcrição e os dados interpretados antes de confirmar qualquer lançamento.
+## Inicialização automática no Windows
 
-A primeira transcrição baixa o modelo configurado em `WHISPER_MODEL` (padrão `small`). Por padrão, a execução usa CPU e `int8`. O modelo Whisper roda localmente. Para mensagens de voz do Telegram, o arquivo é recebido pela Bot API e baixado temporariamente ao computador para transcrição.
+- Execute `instalar_inicio_automatico.bat` para criar uma tarefa no Agendador de Tarefas no logon do usuário atual.
+- Execute `remover_inicio_automatico.bat` para remover a tarefa.
+- O serviço padrão escuta apenas em `127.0.0.1:8000`.
+- O computador precisa estar ligado, conectado à internet e sem suspensão para Telegram e lembretes funcionarem.
 
-## Configurar o Telegram (opcional)
+## Atualizar sem perder dados
 
-Siga o guia completo em [`docs/telegram-setup.md`](docs/telegram-setup.md). Em resumo: crie um bot com [@BotFather](https://t.me/BotFather), coloque o token em `TELEGRAM_BOT_TOKEN` no `.env`, envie `/start` para descobrir seu ID, configure `TELEGRAM_ALLOWED_USER_ID` e reinicie o Luca. Sem o ID permitido, o bot não acessa dados financeiros.
+**Não extraia uma versão nova por cima da pasta antiga.** Use uma pasta nova e copie os dados.
 
-A integração usa long polling com conexões HTTPS iniciadas pelo computador. O painel continua em `127.0.0.1`; não é necessário publicar uma porta na internet. O Bot API é disponibilizado pelo Telegram sem mensalidade de um provedor de bots, sujeito aos limites de uso da plataforma. Consulte [Telegram Bot API](https://core.telegram.org/bots/api).
+1. Pare o Luca e remova/pare a tarefa automática antiga, se estiver instalada.
+2. Faça uma cópia de segurança de toda a pasta `data/` e do `.env`.
+3. Extraia a nova versão em uma pasta separada.
+4. Copie o `.env` antigo para a nova pasta.
+5. Copie toda a pasta `data/` antiga para a nova pasta, preservando `luca.db`, `luca-users.db`, `users/` e backups caso existam.
+6. Execute `iniciar.bat` na pasta nova. As migrações de banco são aditivas; não recriam tabelas financeiras.
+7. Faça login com seu perfil existente. Se for sua primeira atualização para perfis e só existir `data/luca.db`, o primeiro administrador importa esse banco para o seu novo perfil e cria um backup automático.
+8. Teste contas, saldo, últimos lançamentos e Telegram antes de remover a instalação antiga.
+9. Reinstale a tarefa automática a partir da nova pasta, se desejado.
 
-**Privacidade:** os registros financeiros ficam no SQLite local, mas mensagens e áudios enviados ao bot passam pelos servidores do Telegram. Conversas com bots não são Secret Chats com criptografia ponta a ponta. Não envie senhas bancárias, códigos de autenticação ou dados completos de cartão.
+Guia completo: [`docs/upgrading-to-v1.4.2.md`](docs/upgrading-to-v1.4.2.md).
 
-## Deixar o Luca iniciar com o Windows
-
-Depois de executar `iniciar.bat` uma vez e confirmar que o projeto está instalado, execute `instalar_inicio_automatico.bat`. O script registra uma tarefa no Agendador de Tarefas para iniciar o Luca em segundo plano quando seu usuário entrar no Windows. O serviço registra logs rotativos em `logs/luca-service.log`. Para desativar, execute `remover_inicio_automatico.bat`.
-
-O painel fica disponível em `http://127.0.0.1:8000`; o navegador não precisa ficar aberto para o bot Telegram funcionar. O PC precisa estar ligado, conectado à internet e sem suspensão. A tela pode desligar sem encerrar o serviço. A tarefa inicia no logon do usuário, não antes da tela de login do Windows.
-
-Para executar em primeiro plano e acompanhar o terminal, use `iniciar_servico.bat`.
-
-## Configurações de ambiente
-
-Copie `.env.example` para `.env` (o instalador faz isso automaticamente).
+## Configuração `.env`
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `OLLAMA_ENABLED` | `0` | Ativa a IA local quando definido como `1` |
+| `OLLAMA_ENABLED` | `0` | Ativa suporte contextual do Ollama |
 | `OLLAMA_URL` | `http://127.0.0.1:11434` | Endereço local do Ollama |
-| `OLLAMA_MODEL` | `qwen2.5:3b` | Modelo instalado no Ollama |
-| `WHISPER_MODEL` | `small` | Modelo de transcrição |
-| `WHISPER_DEVICE` | `cpu` | Dispositivo para transcrição |
-| `WHISPER_COMPUTE_TYPE` | `int8` | Tipo numérico usado pelo faster-whisper |
-| `LUCA_ACCESS_PASSWORD` | vazio | Senha opcional do painel/API; usuário HTTP Basic: `luca` |
-| `LUCA_DATABASE_PATH` | `data/luca.db` | Caminho alternativo para o banco SQLite |
-| `TELEGRAM_BOT_TOKEN` | vazio | Token do bot criado no BotFather; mantenha em segredo |
-| `TELEGRAM_ALLOWED_USER_ID` | vazio | ID numérico autorizado; obrigatório para acessar dados |
-| `TELEGRAM_POLL_TIMEOUT` | `25` | Tempo máximo de long polling em segundos |
+| `OLLAMA_MODEL` | `qwen2.5:3b` | Modelo local |
+| `WHISPER_MODEL` | `medium` | Modelo de transcrição (mais preciso, exige mais CPU/memória) |
+| `WHISPER_DEVICE` | `cpu` | Dispositivo de transcrição |
+| `TELEGRAM_BOT_TOKEN` | vazio | Token do BotFather |
+| `TELEGRAM_POLL_TIMEOUT` | `25` | Long polling |
 | `TELEGRAM_REMINDER_CHECK_SECONDS` | `60` | Intervalo de verificação de lembretes |
-| `TELEGRAM_MAX_AUDIO_MB` | `20` | Tamanho máximo de áudio aceito (1 a 20 MB) |
+| `TELEGRAM_MAX_AUDIO_MB` | `20` | Tamanho máximo de áudio |
+| `LUCA_ACCESS_PASSWORD` | vazio | Proteção HTTP Basic adicional do painel local |
+| `LUCA_COOKIE_SECURE` | `0` | Defina `1` somente atrás de HTTPS |
+| `LUCA_CONTROL_DATABASE_PATH` | `data/luca-users.db` | Banco central de perfis |
+| `LUCA_DATABASE_PATH` | `data/luca.db` | Caminho legado do banco pessoal antes da migração |
 
-A variável antiga `PIERRE_DATABASE_PATH` continua sendo aceita para facilitar a migração de instalações anteriores. Se `data/luca.db` ainda não existir e `data/pierre.db` existir, o Luca continuará utilizando o banco antigo para preservar os dados.
+Nunca publique `.env`, banco SQLite, backups ou logs em repositório público. O `.gitignore` do projeto exclui esses arquivos.
 
-O arquivo `.env` nunca deve ser enviado ao GitHub.
-
-## Área Contas com amigos — exemplo
-
-Imagine que você pagou R$ 300,00 de hospedagem para um grupo e o Rafael precisa devolver a parte dele:
-
-1. Abra **Contas com amigos → Novo registro**.
-2. Pessoa: `Rafael`.
-3. Tipo: `Tenho a receber`.
-4. Descrição: `Parte da hospedagem`.
-5. Valor: `300,00`.
-6. Informe vencimento e lembrete, se desejar.
-
-Quando Rafael devolver R$ 100,00, use **Registrar** e informe o valor recebido. O Luca passa a mostrar R$ 200,00 pendentes. Quando o restante for recebido, o compromisso fica como **Quitado** e o histórico permanece disponível.
-
-O mesmo fluxo funciona para valores que você precisa pagar a outra pessoa.
-
-## Backup, exportação e importação
-
-- **Backup completo:** Configurações → Baixar backup completo. Guarde o `.db` em outro local seguro.
-- **Exportar CSV:** Relatórios → Exportar CSV. O arquivo usa `;` como separador e UTF-8 com BOM para facilitar abertura no Excel em português.
-- **Importar CSV:** Configurações → selecione um CSV exportado pelo Luca e a conta de destino. A importação cria novos lançamentos e não deduplica registros; faça um backup primeiro.
-
-O banco padrão fica em `data/luca.db`. **Não apague a pasta `data`**: ela contém suas informações financeiras. O banco não deve ser compartilhado publicamente.
-
-## Testes
-
-No PowerShell, dentro da pasta do projeto:
+## Desenvolvimento e testes
 
 ```powershell
-py -3.11 -m venv .venv
-.venv\Scripts\activate
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m pytest -q
 ```
 
-O GitHub Actions executa validação de sintaxe Python, JavaScript e os testes automaticamente a cada push e pull request.
+O projeto usa FastAPI, SQLite e JavaScript sem framework. A suíte automatizada cobre regras financeiras, migrações, isolamento entre perfis, parser, UI e fluxos Telegram simulados. Ela não substitui um teste manual com um bot Telegram real e uma instalação Windows.
 
-Documentação adicional: [arquitetura](docs/architecture.md) · [contribuição](CONTRIBUTING.md) · [segurança](SECURITY.md) · [guia de publicação](docs/github-publishing.md).
-
-Para atualizar uma instalação anterior sem perder seus lançamentos, consulte [`docs/upgrading-to-v1.3.0.md`](docs/upgrading-to-v1.3.0.md).
-
-## Publicar no seu GitHub
-
-1. Crie um repositório vazio no GitHub com o nome `luca-assistente-financeiro` (não marque para criar README, licença ou `.gitignore`, pois esses arquivos já estão no projeto).
-2. Extraia o projeto em uma pasta local e abra o PowerShell nela.
-3. Antes de publicar, confira se `.env` e `data/*.db` não aparecem no status.
-4. Execute:
-
-```powershell
-git init -b main
-git add .
-git status
-git commit -m "feat: release Luca Assistente Financeiro 1.3.0"
-git remote add origin https://github.com/SEU-USUARIO/luca-assistente-financeiro.git
-git push -u origin main
-```
-
-Substitua `SEU-USUARIO` pelo seu usuário do GitHub. O `.gitignore` impede que banco, `.env`, ambiente virtual, backups e arquivos temporários sejam adicionados por padrão, mas sempre revise `git status` antes de confirmar o commit. Nunca coloque token de acesso do GitHub dentro de arquivos do projeto.
-
-Sugestão de descrição do repositório: **Assistente financeiro pessoal local com contas, cartões, metas, relatórios e controle de valores a receber/pagar entre amigos.**
-
-## Segurança e limitações
-
-- O servidor inicia em `127.0.0.1`, acessível apenas no próprio computador.
-- `LUCA_ACCESS_PASSWORD` ativa uma camada adicional de HTTP Basic. Não exponha o servidor diretamente à internet; essa senha não substitui HTTPS, proteção de rede ou uma implantação revisada.
-- O arquivo SQLite não é criptografado pelo aplicativo.
-- Não informe senhas bancárias, códigos de autenticação ou números completos de cartões.
-- Não há Open Finance, sincronização bancária, conciliação automática ou execução de pagamentos.
-- Os lembretes no painel dependem do Luca aberto. Os lembretes via Telegram exigem bot configurado, usuário autorizado, PC ligado e conexão com a internet; se o PC ficar desligado, os lembretes vencidos são verificados no próximo início.
-- O token Telegram deve ficar apenas no `.env`, nunca no GitHub. O Luca não aceita mensagens de grupos nem de usuários diferentes do ID autorizado.
-- Chats com bots no Telegram não são Secret Chats com criptografia ponta a ponta; mensagens e áudios são processados pela infraestrutura Telegram antes de chegarem ao computador.
-- A identificação de valor, tipo de movimento, conta e forma de pagamento usa regras determinísticas para reduzir erros financeiros. O Ollama é complementar e só refina descrição/categoria. Confira sempre a prévia antes de confirmar; mensagens ambíguas ou sem conta identificável pedem esclarecimento.
-
-## Estrutura do projeto
+## Estrutura
 
 ```text
-luca-assistente-financeiro/
-├── .github/                 # CI e modelos de issues
-├── app/
-│   ├── static/              # Interface web
-│   ├── assistant.py         # Interpretação e transcrição
-│   ├── database.py          # SQLite e migrações
-│   ├── finance.py           # Regras e cálculos financeiros
-│   ├── main.py              # API FastAPI e rotas
-│   ├── service.py           # Execução em segundo plano e logs rotativos
-│   └── telegram_bot.py      # Bot oficial Telegram por long polling
-├── data/                    # Banco local (ignorado pelo Git)
-├── docs/                    # Guias e documentação técnica
-├── logs/                    # Logs locais (ignorado pelo Git)
-├── scripts/                 # Instalação/remoção da tarefa do Windows
-├── tests/                   # Testes automatizados
-├── .env.example
-├── iniciar.bat
-├── instalar_inicio_automatico.bat
-├── remover_inicio_automatico.bat
-├── instalar_audio.bat
-├── instalar_ollama.bat
-├── LICENSE
-├── pyproject.toml
-└── requirements.txt
+app/
+  assistant.py       # parser determinístico, Ollama e transcrição
+  auth.py            # perfis, sessões, convites e vínculos Telegram
+  database.py        # SQLite, migrações aditivas e contexto por usuário
+  main.py            # API FastAPI
+  service.py         # inicialização do serviço local
+  telegram_bot.py    # bot por long polling e comandos
+  static/            # painel web
+tests/               # suíte automatizada
+docs/                # arquitetura, Telegram e catálogo de frases
 ```
 
-## Roadmap
+## Segurança e limites
 
-- [x] Múltiplas contas e cartões.
-- [x] Receitas, despesas, parcelamentos e transferências.
-- [x] Orçamentos, metas e recorrências.
-- [x] Livro de valores a receber/pagar com amigos.
-- [x] Lembretes locais e totalizadores por pessoa.
-- [x] Documentação e testes automatizados para GitHub.
-- [x] Integração oficial com Telegram por long polling.
-- [x] Lembretes de acertos com amigos pelo Telegram.
-- [x] Inicialização automática no logon do Windows.
-- [ ] Testes de interface automatizados.
-- [ ] Relatório PDF personalizável.
+- Não é um serviço bancário, não acessa contas bancárias e não realiza pagamentos.
+- Não armazene credenciais bancárias, números completos de cartão ou códigos de autenticação.
+- O isolamento por usuário ocorre em arquivos SQLite separados; para uso remoto, publique somente atrás de HTTPS e mantenha o sistema atualizado.
+- O administrador pode gerar convites; não compartilhe convites publicamente.
+- O arquivo do token Telegram é segredo. Se for exposto, revogue-o pelo BotFather e atualize `.env`.
+- Faça backups regulares de `data/` e teste a restauração.
 
 ## Licença
 
-Distribuído sob a licença MIT. Consulte o arquivo [LICENSE](LICENSE).
+MIT. Atualize o campo de copyright da licença com seu nome/identidade antes de publicar o repositório.
 
 
-### Experiência de preenchimento — v1.2.1
-
-Os formulários usam datas digitáveis no padrão brasileiro `dd/mm/aaaa`. As datas de movimentações e quitações sugerem hoje automaticamente. No cadastro de acertos, os campos essenciais ficam visíveis e vencimentos, lembretes e observações ficam em **Prazo, lembrete e observações**. Os detalhes de vencimento sugerem hoje somente quando essa seção é aberta.
-
-
-### Telegram e execução contínua — v1.3.0
-
-O Luca pode conversar por Telegram sem endpoint público. Crie o bot com BotFather, configure `TELEGRAM_BOT_TOKEN`, envie `/start` para descobrir o ID do remetente, configure `TELEGRAM_ALLOWED_USER_ID` e reinicie. A integração aceita texto e áudio; áudio precisa do suporte faster-whisper instalado. A confirmação de registros é obrigatória.
-
-Para iniciar em segundo plano no logon do Windows, execute `instalar_inicio_automatico.bat`; para remover a tarefa, execute `remover_inicio_automatico.bat`. Consulte [`docs/upgrading-to-v1.3.0.md`](docs/upgrading-to-v1.3.0.md) ao atualizar uma instalação existente.
+### Atualização 1.4.3 — recorrências, categorias e padrões
+- Correção do erro ao salvar recorrências e persistência correta do tipo de pagamento nas movimentações geradas.
+- Cadastro de categorias personalizadas, com arquivamento e reativação sem perda do histórico.
+- Preferências de banco/conta e tipo de pagamento padrão em lançamentos manuais e interpretações do assistente/Telegram.
+- 84 testes automatizados aprovados.
