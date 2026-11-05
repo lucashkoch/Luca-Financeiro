@@ -1,6 +1,6 @@
 [project]
 name = "luca-assistente-financeiro"
-version = "1.4.3"
+version = "1.4.9"
 description = "Assistente financeiro com perfis isolados, múltiplas contas, limites mensais e controle de valores a pagar e receber."
 readme = "README.md"
 requires-python = ">=3.11"

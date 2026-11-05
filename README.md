@@ -1,9 +1,75 @@
 # Luca — Assistente Financeiro
 
-![Version](https://img.shields.io/badge/version-1.4.3-7569e6)
-![Tests](https://img.shields.io/badge/tests-84%20passing-22a06b)
+![Version](https://img.shields.io/badge/version-1.4.9-7569e6)
+![Tests](https://img.shields.io/badge/tests-112%20passing-22a06b)
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776ab)
 ![License](https://img.shields.io/badge/license-MIT-blue)
+
+## Atualização 1.4.9 — transporte Telegram resiliente
+
+- Substituído o `urllib` de chamadas Telegram por um `httpx.Client` persistente com pool de conexões reutilizáveis, compartilhado pela Bot API e pelos downloads de mídia.
+- Timeouts separados para conexão, leitura, escrita e espera por conexão no pool.
+- Retentativas com backoff curto para métodos idempotentes (`getFile`, `getUpdates`, `getMe`, `setMyCommands`) e para downloads GET. `sendMessage` não é repetido automaticamente, evitando respostas duplicadas.
+- Downloads de áudio agora são transmitidos em streaming, limitados por tamanho e conferidos contra o `file_size` informado pelo Telegram; arquivos truncados são descartados e baixados novamente.
+- `/telegram/status` registra última chamada bem-sucedida, última falha HTTP e última falha de áudio, sem expor token.
+- Nenhuma alteração no banco de dados.
+- 112 testes automatizados aprovados; testes de HTTP usam transporte simulado e não substituem uma validação de rede real no Windows.
+
+Guia de atualização 1.4.9: [`docs/upgrading-to-v1.4.9.md`](docs/upgrading-to-v1.4.9.md).
+
+## Atualização 1.4.8 — compatibilidade do áudio
+
+- Corrigida a incompatibilidade entre `faster-whisper` 1.2.1 e PyAV 19+: o argumento `metadata_errors` usado pelo faster-whisper foi removido no PyAV 19.
+- `instalar_audio.bat` instala `av>=11,<19` e valida a versão, mantendo a combinação compatível.
+- O serviço identifica essa incompatibilidade antes de transcrever e o status `/assistant/audio/status` informa `decoder.faster_whisper_compatible` e `decoder.compatibility_warning`.
+- Nenhuma alteração no banco de dados.
+- 110 testes automatizados aprovados.
+
+Guia de atualização 1.4.8: [`docs/upgrading-to-v1.4.8.md`](docs/upgrading-to-v1.4.8.md).
+
+## Atualização 1.4.7 — dicionário de linguagem financeira pt-BR
+
+- Novo dicionário JSON editável em [`app/financial_language_pt_br.json`](app/financial_language_pt_br.json), com 28 categorias, 889 aliases únicos de categoria, 63 expressões de intenção e 42 formas de pagamento.
+- A classificação combina frases específicas, termos, prioridades e contexto; não depende de uma única palavra isolada.
+- Reconhece variações comuns de acentuação, hífen/espaço e plural, sem casar nomes por substring.
+- Nomes de bancos e contas continuam dinâmicos e são identificados a partir das contas do perfil.
+- Novas categorias padrão são disponibilizadas nos perfis existentes na inicialização, sem alteração destrutiva de tabelas ou lançamentos.
+- 108 testes automatizados aprovados.
+
+Guia de atualização 1.4.7: [`docs/upgrading-to-v1.4.7.md`](docs/upgrading-to-v1.4.7.md). Guia do dicionário: [`docs/dicionario-de-linguagem.md`](docs/dicionario-de-linguagem.md).
+
+## Atualização 1.4.6 — cadastro pelo Telegram e resiliência do áudio
+
+- Corrigida a limpeza de descrições em frases compactas do Telegram: palavras usadas como forma de pagamento ("crédito", "débito", "Pix") deixam de vazar para a descrição quando o parser já identificou o campo.
+- Quando a categoria é repetida no final da frase como metadado, ela fica somente no campo Categoria; categorias que são a própria finalidade ("mercado", "alimentação") continuam como descrição quando não existe outro motivo.
+- Corrigida a normalização de palavras frequentes sem acento, incluindo "Agua" → "Água" e "Almoco" → "Almoço".
+- Mensagens de voz agora identificam a etapa que falhou: obter `getFile`, baixar o arquivo, decodificar/transcrever ou enviar a resposta.
+- Chamadas `getFile` e downloads de áudio ganharam uma retentativa controlada; o download agora usa limite de espera maior para conexões lentas.
+- Erros de rede deixam de aparecer apenas como `TimeoutError`, informando o método/etapa e o limite de espera.
+- Nenhuma alteração no banco de dados.
+
+Guia de atualização 1.4.6: [`docs/upgrading-to-v1.4.6.md`](docs/upgrading-to-v1.4.6.md).
+
+## Atualização 1.4.5 — decodificação robusta de áudio
+
+- Mensagens de voz do Telegram (OGG/Opus, inclusive arquivos `.oga`) e gravações do navegador passam primeiro pelo PyAV, que decodifica e normaliza o áudio para WAV PCM mono a 16 kHz antes de entregá-lo ao Whisper.
+- O instalador de áudio instala e valida explicitamente `faster-whisper`, `ctranslate2` e `av` (PyAV), incluindo as bibliotecas FFmpeg empacotadas no PyAV.
+- VAD fica desativado no fluxo de notas curtas, evitando cortes em mensagens de poucos segundos e removendo uma etapa opcional da transcrição.
+- O diagnóstico `/assistant/audio/status` informa separadamente se faster-whisper e o decodificador PyAV estão importáveis, com versões e bibliotecas FFmpeg.
+- Erros de decodificação/transcrição deixam de ser genéricos: a mensagem e o log mostram o tipo e a causa técnica, sem criar lançamento quando a transcrição falha.
+- Nenhuma alteração no banco de dados.
+
+Guia de atualização 1.4.5: [`docs/upgrading-to-v1.4.5.md`](docs/upgrading-to-v1.4.5.md).
+
+## Atualização 1.4.4 — padrões de lançamento e contas arquivadas
+
+- A primeira conta financeira ativa passa a ser sugerida automaticamente como conta padrão; bancos antigos sem padrão são corrigidos sem substituir uma preferência válida.
+- O seletor de conta padrão é reaplicado toda vez que um novo lançamento ou uma nova recorrência é aberto.
+- Débito é definido como forma de pagamento inicial padrão quando o perfil ainda não tem uma preferência válida; a preferência continua sendo única por perfil.
+- A lista de formas de pagamento marca somente a opção realmente escolhida como padrão. As opções nativas deixam de ser confundidas com três padrões diferentes.
+- A área Minhas contas passa a exibir contas arquivadas, com restauração e exclusão permanente quando não houver registros financeiros vinculados.
+- A exclusão permanente é bloqueada quando existem lançamentos, transferências, recorrências ou pagamentos de crédito associados, para preservar o histórico.
+- Migração aditiva, sem apagar lançamentos, saldos ou configurações válidas.
 
 Assistente financeiro em português brasileiro, com painel web local, banco SQLite, perfis isolados, integração opcional com Telegram e inteligência artificial local. Foi pensado para registrar e consultar finanças sem assinatura de uma API de IA.
 
@@ -49,6 +115,7 @@ Assistente financeiro em português brasileiro, com painel web local, banco SQLi
 - Prévia e confirmação antes de gravar qualquer lançamento ou operação administrativa.
 - Perguntas de esclarecimento quando houver ambiguidade; o sistema evita inventar conta, forma de pagamento ou intenção.
 - Catálogo de frases e exemplos em [`docs/catalogo-de-frases.md`](docs/catalogo-de-frases.md).
+- Dicionário de linguagem financeira pt-BR editável em [`app/financial_language_pt_br.json`](app/financial_language_pt_br.json), documentado em [`docs/dicionario-de-linguagem.md`](docs/dicionario-de-linguagem.md).
 - Integração opcional com Ollama para apoio contextual local.
 - Integração opcional com faster-whisper para transcrição local de áudio.
 
@@ -237,3 +304,20 @@ MIT. Atualize o campo de copyright da licença com seu nome/identidade antes de 
 - Cadastro de categorias personalizadas, com arquivamento e reativação sem perda do histórico.
 - Preferências de banco/conta e tipo de pagamento padrão em lançamentos manuais e interpretações do assistente/Telegram.
 - 84 testes automatizados aprovados.
+
+
+### Atualização 1.4.4 — padrões de lançamento e contas arquivadas
+- Conta padrão preenchida automaticamente em novos lançamentos e recorrências, com recuperação de perfis antigos sem uma escolha válida.
+- Uma única forma de pagamento identificada como padrão por perfil; as formas nativas agora aparecem apenas como opções disponíveis.
+- Configuradores de padrões reorganizados e com instruções mais claras.
+- Seção de contas arquivadas com restauração e exclusão permanente somente quando não há histórico associado.
+- 90 testes automatizados aprovados.
+- Guia: [`docs/upgrading-to-v1.4.4.md`](docs/upgrading-to-v1.4.4.md).
+
+
+### Telegram resiliente — v1.4.9
+- Cliente HTTPX persistente com pool de conexões compartilhado entre Bot API e download de mídia.
+- Timeouts separados para conexão, leitura, escrita e pool.
+- Retentativas limitadas para métodos idempotentes (`getFile`, `getUpdates`, `getMe`, `setMyCommands`) e para download GET; envio de mensagens não é repetido automaticamente para evitar duplicidade.
+- Download de áudio em streaming, com limite de tamanho e limpeza de arquivos parciais.
+- Diagnóstico persistente do último sucesso/falha de API e da última falha de áudio, sem expor token.

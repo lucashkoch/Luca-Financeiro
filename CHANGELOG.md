@@ -1,4 +1,74 @@
+## 1.4.8 — compatibilidade do Whisper com PyAV
+
+- Corrigida a incompatibilidade de dependências que fazia a transcrição falhar depois de carregar e decodificar o áudio: faster-whisper 1.2.1 chama `av.open(..., metadata_errors=...)`, argumento removido no PyAV 19.
+- `instalar_audio.bat` agora instala `av>=11,<19`, em vez de atualizar PyAV sem limite de versão.
+- O instalador valida a versão principal do PyAV e encerra com erro explícito se detectar PyAV 19 ou superior.
+- O runtime verifica a compatibilidade antes de iniciar a transcrição e orienta a executar o instalador atualizado.
+- `/assistant/audio/status` passa a informar `decoder.faster_whisper_compatible` e `decoder.compatibility_warning`.
+- Nenhuma alteração no banco de dados.
+- Testes de regressão para PyAV 19 e para o pin do instalador.
+
+## 1.4.7 — dicionário de linguagem financeira pt-BR
+
+- Criado `app/financial_language_pt_br.json`, catálogo versionado e editável, separado das regras do parser.
+- O dicionário reúne 28 categorias (incluindo Outros), 889 expressões/sinônimos únicos de categoria, 63 aliases de intenção e 42 aliases de forma de pagamento.
+- O parser agora carrega os grupos de intenção, meios de pagamento e categorias do JSON, em vez de manter todos esses termos embutidos em um bloco Python.
+- A categorização passou a pontuar frases específicas acima de palavras genéricas, mantendo prioridades contextuais para Educação, Cuidados pessoais, Vendas, Salário, Rendimentos e Benefícios.
+- A correspondência reconhece acentos, equivalência entre hífen e espaço e plurais comuns do português brasileiro, sem aceitar correspondência por substring.
+- Termos ambíguos como “cartão”, “99” e “Inter” não devem ser interpretados isoladamente; nomes de contas continuam sendo resolvidos pelas contas cadastradas em cada perfil.
+- “Vale-refeição” recebido é classificado como Benefícios; quando usado para pagar uma refeição, permanece em Alimentação.
+- Foram acrescentadas categorias padrão ao seletor, incluindo Veículo, Serviços, Impostos e taxas, Tarifas e encargos, Dívidas e financiamentos, Seguros, Vendas, Reembolsos, Benefícios, Rendimentos e Presentes e doações.
+- O banco recebe as novas categorias por `INSERT OR IGNORE` durante a inicialização; nenhuma tabela ou lançamento existente é removido.
+- Suíte automatizada: 108 testes aprovados.
+
 # Changelog
+
+## 1.4.9 — transporte Telegram resiliente
+
+- Migradas chamadas da Bot API e downloads de mídia de `urllib` para `httpx.Client` persistente, com pool keep-alive compartilhado.
+- Timeouts explícitos de conexão, leitura, escrita e pool.
+- Retry/backoff limitado para métodos idempotentes; `sendMessage` não é repetido para evitar duplicidade.
+- `getFile` possui até três tentativas em falhas transitórias.
+- Download de áudio usa streaming; valida o tamanho anunciado e descarta arquivo parcial/truncado antes do Whisper.
+- `/telegram/status` mantém métricas recentes de sucesso/falha de API e falhas no pipeline de áudio, sem expor o token.
+- Sem migração ou alteração de esquema SQLite.
+- 112 testes automatizados aprovados com transporte HTTP simulado.
+
+## 1.4.6 — cadastro Telegram e tolerância a falhas de áudio
+
+- Corrigidas descrições nas mensagens compactas do Telegram: remove palavras isoladas de forma de pagamento quando reconhecidas como metadados, sem remover o motivo do lançamento.
+- A categoria final anexada à frase passa a ser separada da descrição somente quando existe uma finalidade independente; mantém "mercado"/"alimentação" quando esse é o único motivo informado.
+- Normalização ortográfica básica para descrições comuns: água, almoço, café e ônibus.
+- `getFile` passa a usar timeout ampliado e uma retentativa para falhas transitórias.
+- Download de áudio passa a usar duas tentativas e timeout de 75 segundos, com mensagens específicas para falhas de rede e divergências de etapa.
+- `_process_voice` informa se a falha ocorreu ao solicitar os metadados, baixar, decodificar/transcrever ou enviar a resposta; não cria ação pendente em caso de falha.
+- Adicionados testes de regressão dos exemplos "Agua 7 credito alimentacao" e "Lanche 8,00 nubank credito", da prévia real do Telegram e dos timeouts.
+- Nenhuma alteração no banco de dados.
+- 101 testes automatizados aprovados.
+
+## 1.4.5 — decodificação robusta de áudio
+
+- Mensagens de voz do Telegram (.oga/.ogg/Opus) e gravações do navegador são decodificadas via PyAV e normalizadas para WAV PCM mono/16 kHz antes do Whisper.
+- `instalar_audio.bat` instala e valida explicitamente faster-whisper, CTranslate2 e PyAV, exibindo as bibliotecas FFmpeg empacotadas.
+- VAD desativado para preservar fala curta de mensagens financeiras de 2–5 segundos e reduzir dependências no caminho crítico.
+- Status de áudio passa a mostrar separadamente a disponibilidade do decodificador PyAV, versões e bibliotecas FFmpeg.
+- Erros de decode e de transcrição incluem causa técnica resumida no chat e traceback completo no log, sem gerar lançamento.
+- Ampliada a lista de extensões reconhecidas no download para `.opus` e `.mp4`, além de `.oga`, `.ogg`, `.mp3`, `.m4a`, `.wav` e `.webm`.
+- Nenhuma alteração no banco de dados.
+- 94 testes automatizados aprovados.
+
+
+## 1.4.4 — padrões e arquivo de contas
+
+- Corrigido o preenchimento da conta padrão em novos lançamentos e recorrências; o primeiro banco/conta ativa passa a ser padrão quando ainda não há uma preferência válida.
+- A migração corrige perfis antigos sem conta padrão e remove marcações duplicadas de padrão.
+- Débito passa a ser a preferência inicial de pagamento quando ainda não existe uma escolha válida; cada perfil mantém uma única forma de pagamento padrão.
+- A listagem de formas de pagamento diferencia formas disponíveis da única forma efetivamente configurada como padrão.
+- Configurações reorganizadas com instruções mais claras e status da preferência selecionada.
+- Nova seção Contas arquivadas, com restauração e exclusão permanente quando a conta não possui histórico vinculado.
+- A exclusão permanente é bloqueada quando há lançamentos, transferências, recorrências ou pagamentos de crédito relacionados.
+- Adicionadas rotas de restauração e exclusão permanente, contagem de registros relacionados e testes de regressão.
+- 90 testes automatizados aprovados.
 
 ## 1.4.3 — correções de recorrências e preferências
 
@@ -57,3 +127,11 @@
 ### Compatibilidade e testes
 - Nenhuma migração destrutiva ou alteração necessária nas tabelas de movimentações.
 - 63 testes automatizados aprovados na suíte desta release.
+
+## 1.4.9 — Transporte Telegram resiliente
+- Substituído `urllib` por `httpx.Client` persistente com pool de conexões.
+- Timeouts divididos em connect/read/write/pool.
+- Retry com backoff para chamadas idempotentes e downloads de mídia.
+- Download de voz em streaming sem desligar keep-alive.
+- Diagnóstico expõe método, duração, tentativas e última falha sem revelar o token.
+- Arquivos incompletos/truncados são descartados e baixados novamente; nenhum áudio parcial chega ao Whisper.
