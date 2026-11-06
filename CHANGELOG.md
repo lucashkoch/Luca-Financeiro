@@ -1,3 +1,29 @@
+## 1.6.0 — recuperação de mensagens do Telegram
+
+- Criada uma caixa de entrada persistente no banco central de perfis. Cada atualização retornada por `getUpdates` é gravada junto com o próximo offset, na mesma transação, antes de o polling confirmar o lote ao Telegram.
+- Adicionado processamento em segundo plano, separado do polling, com ordem FIFO, estado por mensagem, tentativas, espera progressiva e recuperação de itens que estavam em processamento quando o serviço foi encerrado.
+- O identificador `update_id` impede que lotes repetidos criem mensagens duplicadas na fila; atualizações já processadas pela versão anterior são reconhecidas durante a migração.
+- No modo misto, mensagens de texto recuperadas só são registradas automaticamente quando a interpretação está completa e tem alta confiança. Mensagens ambíguas, comandos que alteram cadastros e áudios continuam exigindo confirmação.
+- Ações pendentes originadas de mensagens recuperadas expiram em 7 dias, em vez de 15 minutos. Várias confirmações podem coexistir sem substituir uma à outra.
+- Criado o comando `/fila` para consultar a situação das mensagens e `/reprocessar` para reenfileirar falhas do próprio usuário.
+- Downloads de áudio com falha transitória voltam à fila com retentativa; erros permanentes são mantidos em estado de falha até correção e reprocessamento.
+- Adicionadas as configurações `TELEGRAM_OFFLINE_THRESHOLD_SECONDS` e `TELEGRAM_RECOVERED_TEXT_MODE`.
+- Limitação documentada: o Telegram conserva atualizações pendentes por até 24 horas. A caixa local só protege mensagens depois que elas são recebidas e persistidas pelo Luca.
+- Nenhum lançamento ou dado de usuário é removido pela migração; as novas tabelas são criadas automaticamente no banco central e nos bancos de perfil.
+- Adicionados testes para lotes acima de 100 atualizações, retomada após reinício, deduplicação, retentativas e espera do worker sem uso excessivo de CPU. **131 testes automatizados aprovados.**
+
+## 1.5.0 — edição de recorrências e resumo por pessoa
+
+- A tela de recorrências agora permite editar descrição, tipo, valor, categoria, conta, forma de pagamento, frequência e próxima data.
+- Criada a rota `PATCH /recurring/{id}` com validação de conta, forma de pagamento e compatibilidade de cartão.
+- O fechamento de modais agora exige que o ponteiro comece e termine no fundo do modal; arrastar para selecionar texto em campos não fecha o formulário.
+- A área Devendo / A receber ganhou filtro por pessoa e um resumo individual com valores a receber, a pagar, saldo líquido e compromissos cadastrados.
+- O resumo individual pode ser impresso ou salvo como PDF pelo navegador.
+- A lista por pessoa também pode ser aberta clicando no nome na seção Saldo por pessoa.
+- Ajustes responsivos no cabeçalho da área Devendo / A receber para evitar sobreposição dos textos e botões.
+- Nenhuma tabela ou dado financeiro existente foi removido; sem migração de banco.
+- 118 testes automatizados aprovados.
+
 ## 1.4.8 — compatibilidade do Whisper com PyAV
 
 - Corrigida a incompatibilidade de dependências que fazia a transcrição falhar depois de carregar e decodificar o áudio: faster-whisper 1.2.1 chama `av.open(..., metadata_errors=...)`, argumento removido no PyAV 19.
