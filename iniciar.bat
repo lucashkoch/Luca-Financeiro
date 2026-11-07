@@ -26,11 +26,12 @@ if not exist ".env" copy ".env.example" ".env" >nul
 
 echo.
 echo =============================================
-echo   LUCA - ASSISTENTE FINANCEIRO v1.4.2
+echo   LUCA - ASSISTENTE FINANCEIRO v1.6.10
 echo =============================================
 echo Painel: http://127.0.0.1:8000
 echo API:    http://127.0.0.1:8000/docs
 echo Dados:  data\
+echo Audio:  verificacao e instalacao automatica no primeiro inicio
 echo Logs:   logs\luca-service.log
 echo Para encerrar, pressione Ctrl+C.
 echo.

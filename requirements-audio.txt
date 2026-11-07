@@ -1,0 +1,4 @@
+# Dependências opcionais de transcrição local.
+# PyAV 19 removeu metadata_errors, argumento usado pela versão atual do faster-whisper.
+faster-whisper>=1.1,<2
+av>=11,<19

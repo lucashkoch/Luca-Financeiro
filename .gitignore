@@ -35,3 +35,5 @@ Desktop.ini
 
 # Local runtime logs
 logs/
+# One-time Telegram branding sync marker
+data/telegram-profile-photo.sha256

@@ -1,10 +1,12 @@
 # Luca — Assistente Financeiro
 
+<p align="center"><img src="branding/luca-logo-original.png" alt="Logo Luca" width="260"></p>
+
 O Luca é um aplicativo para organizar as finanças pessoais. Nele você pode registrar receitas, despesas e transferências, acompanhar contas e cartões, criar metas e consultar relatórios.
 
 Os lançamentos podem ser feitos pelo painel no navegador ou por uma conversa com o bot do Telegram. O assistente entende mensagens em português e mostra uma prévia para você conferir antes de salvar.
 
-**Versão atual:** 1.6.0  
+**Versão atual:** 1.6.10  
 **Requisitos:** Windows 10 ou 11 e Python 3.11 ou superior  
 **Licença:** MIT
 
@@ -21,6 +23,8 @@ Os lançamentos podem ser feitos pelo painel no navegador ou por uma conversa co
 
 O Luca não acessa automaticamente suas contas bancárias, não faz pagamentos e não consulta cotações de investimentos. Os saldos e movimentações são informados por você.
 
+Os saldos do painel consideram movimentações com data até hoje. Receitas, despesas, transferências e pagamentos agendados para datas futuras ficam fora dos saldos atuais até o dia informado. Compras parceladas no crédito passam a compor a dívida total quando a primeira parcela chega à data; as parcelas seguintes continuam distribuídas nos meses correspondentes. O resultado do mês mostra o que já foi realizado, enquanto os lançamentos futuros continuam disponíveis para consulta e planejamento.
+
 ## Assistente e Telegram
 
 Você pode escrever de forma direta, por exemplo:
@@ -32,7 +36,7 @@ Você pode escrever de forma direta, por exemplo:
 
 O interpretador tenta identificar o tipo de movimentação, valor, data, descrição, categoria, conta, forma de pagamento e parcelas. Quando falta informação ou a frase permite mais de uma interpretação, o Luca pode pedir que você esclareça.
 
-Antes de gravar uma movimentação, o sistema apresenta uma prévia com as opções **Confirmar** e **Cancelar**. O dicionário de expressões fica em [`app/financial_language_pt_br.json`](app/financial_language_pt_br.json), separado do código principal. Há exemplos adicionais em [`docs/catalogo-de-frases.md`](docs/catalogo-de-frases.md).
+Antes de gravar uma movimentação, o sistema apresenta uma prévia com as opções **Confirmar**, **Cancelar** e **Editar**. Pelo Telegram, você pode corrigir valor, descrição, categoria, conta, forma de pagamento, data, parcelas e observações antes de confirmar. O dicionário de expressões fica em [`app/financial_language_pt_br.json`](app/financial_language_pt_br.json), separado do código principal. Há exemplos adicionais em [`docs/catalogo-de-frases.md`](docs/catalogo-de-frases.md).
 
 O mesmo bot do Telegram pode atender mais de um perfil. Cada pessoa vincula sua própria conta por um código gerado no painel, e os dados financeiros ficam separados por usuário. Veja as instruções em [`docs/telegram-setup.md`](docs/telegram-setup.md).
 
@@ -52,7 +56,7 @@ O banco de dados é criado na pasta `data/`. Guarde essa pasta e o arquivo `.env
 
 Para usar o bot, crie um bot com o [@BotFather](https://t.me/BotFather), informe o token em `TELEGRAM_BOT_TOKEN` no arquivo `.env` e siga o guia [`docs/telegram-setup.md`](docs/telegram-setup.md).
 
-O Luca usa long polling, então a instalação local não precisa de webhook nem de uma porta pública. O computador precisa permanecer ligado, conectado à internet e com o serviço em execução para o bot responder.
+O Luca usa long polling, então a instalação local não precisa de webhook nem de uma porta pública. O computador precisa permanecer ligado, conectado à internet e com o serviço em execução para o bot responder. Na primeira inicialização, o Luca também envia a logo do projeto como foto de perfil do bot, usando `setMyProfilePhoto`. Essa sincronização acontece novamente apenas se a imagem mudar. Para desativá-la, defina `TELEGRAM_PROFILE_PHOTO_ENABLED=0` no `.env`.
 
 ### Mensagens enviadas enquanto o Luca está offline
 
@@ -62,6 +66,7 @@ O Telegram mantém atualizações pendentes por até 24 horas. Quando o Luca vol
 - Mensagens ambíguas, comandos que alteram cadastros e áudios continuam exigindo confirmação.
 - Confirmações de mensagens recuperadas ficam válidas por 7 dias.
 - `/fila` mostra o que está aguardando ou falhou; `/reprocessar` tenta novamente mensagens que terminaram com erro.
+- O processamento de texto/comandos e o processamento de áudio usam workers separados. Um áudio lento para baixar ou transcrever não segura as mensagens de texto enviadas depois.
 - A fila local só pode guardar mensagens depois que o Luca consegue recebê-las do Telegram. Se a instalação ficar offline por mais de 24 horas, o Telegram pode descartar atualizações antigas antes que o Luca consiga buscá-las.
 
 As opções ficam no `.env`: `TELEGRAM_OFFLINE_THRESHOLD_SECONDS` (padrão 120) e `TELEGRAM_RECOVERED_TEXT_MODE` (`mixed` ou `confirm`). Consulte [`docs/telegram-offline-queue.md`](docs/telegram-offline-queue.md) para detalhes e limitações.
@@ -70,7 +75,9 @@ As opções ficam no `.env`: `TELEGRAM_OFFLINE_THRESHOLD_SECONDS` (padrão 120) 
 
 A interpretação básica funciona com regras locais e com o dicionário do projeto. O Ollama é opcional e pode ajudar em mensagens que precisam de contexto adicional. Para ativá-lo, instale o Ollama, execute `instalar_ollama.bat` e ajuste `OLLAMA_ENABLED=1` no `.env`.
 
-A transcrição de mensagens de voz também é opcional. Execute `instalar_audio.bat`; na primeira utilização, o Luca baixa o modelo Whisper configurado. A transcrição é feita no computador. O áudio, porém, chega primeiro pela infraestrutura do Telegram.
+A transcrição de mensagens de voz é opcional. Ao iniciar o serviço, o Luca verifica se `faster-whisper`, CTranslate2 e PyAV estão instalados e compatíveis. Se faltar algo, tenta instalar automaticamente usando o mesmo ambiente Python da aplicação. Se a instalação falhar por falta de conexão ou outro problema, o painel e o bot de texto continuam funcionando; a falha fica registrada em `logs/luca-service.log` e pode ser consultada em `/assistant/audio/status`.
+
+O modelo Whisper configurado em `WHISPER_MODEL` não é baixado durante a inicialização para evitar uma espera longa. Ele é baixado automaticamente no primeiro áudio e fica em cache para os próximos usos. O arquivo `instalar_audio.bat` continua disponível para forçar uma verificação/reparação manual. A transcrição é feita no computador. O áudio, porém, chega primeiro pela infraestrutura do Telegram.
 
 ## Perfis e acesso de outras pessoas
 
@@ -88,7 +95,7 @@ Antes de atualizar, faça uma cópia da pasta `data/` e do arquivo `.env`.
 2. Extraia a nova versão em outra pasta.
 3. Copie o `.env` e a pasta `data/` da instalação anterior.
 4. Não copie a pasta `.venv`; ela será recriada quando necessário.
-5. Execute `iniciar.bat` na nova pasta e confira seus dados antes de remover a instalação antiga.
+5. Execute `iniciar.bat` na nova pasta e confira seus dados antes de remover a instalação antiga. O ambiente `.venv` será recriado, e o suporte de áudio será verificado/instalado automaticamente pelo serviço quando necessário.
 
 As instruções específicas da versão ficam em [`docs/`](docs/). O histórico de mudanças está no [`CHANGELOG.md`](CHANGELOG.md).
 
