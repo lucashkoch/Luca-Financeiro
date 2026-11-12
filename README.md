@@ -6,7 +6,12 @@ O Luca é um aplicativo para organizar as finanças pessoais. Nele você pode re
 
 Os lançamentos podem ser feitos pelo painel no navegador ou por uma conversa com o bot do Telegram. O assistente entende mensagens em português e mostra uma prévia para você conferir antes de salvar.
 
-**Versão atual:** 1.6.10  
+**Versão atual:** 1.7.5  
+
+### Novidades da versão 1.7.5
+
+As faturas de cartão agora projetam todas as cobranças de recorrências ativas no crédito pelos próximos 12 ciclos, respeitando o dia de fechamento e vencimento. As previsões não criam lançamentos e desaparecem quando a ocorrência real é registrada. Pausar ou cancelar uma recorrência remove as próximas previsões; recorrências em Pix ou Débito ficam fora da fatura. Consulte `GUIA-LUCA-1.7.5.md` para a atualização.
+
 **Requisitos:** Windows 10 ou 11 e Python 3.11 ou superior  
 **Licença:** MIT
 
@@ -14,27 +19,33 @@ Os lançamentos podem ser feitos pelo painel no navegador ou por uma conversa co
 
 - Cadastro de contas, carteiras e cartões.
 - Registro de receitas, despesas, depósitos, compras parceladas e transferências.
-- Categorias personalizadas, limites mensais, metas e lançamentos recorrentes, que podem ser editados depois do cadastro.
+- Categorias personalizadas, limites mensais, metas e lançamentos recorrentes gerados automaticamente quando vencem, com prevenção de duplicidade.
 - Definição de conta e forma de pagamento padrão para novos lançamentos.
-- Controle de valores a pagar e a receber de outras pessoas, com resumo por pessoa e opção de imprimir os compromissos.
+- Controle de valores a pagar e a receber de outras pessoas, com resumo por pessoa, compromissos detalhados e opção de imprimir; o Telegram permite cadastrar esses acertos por um fluxo guiado e confirmar antes de salvar.
 - Acompanhamento manual de economias e investimentos.
-- Consultas por período, conta, categoria e forma de pagamento.
-- Importação e exportação de lançamentos em CSV e backup dos dados.
+- Consultas por período, conta, categoria e forma de pagamento, com filtros paginados no histórico.
+- Importação e exportação de lançamentos em CSV, proteção contra reimportação do mesmo arquivo e backup dos dados.
+- Divisão de uma movimentação entre categorias sem duplicar o efeito no saldo da conta.
+- Histórico paginado, recorrências pausáveis e checklist de fechamento mensal.
 
 O Luca não acessa automaticamente suas contas bancárias, não faz pagamentos e não consulta cotações de investimentos. Os saldos e movimentações são informados por você.
 
-Os saldos do painel consideram movimentações com data até hoje. Receitas, despesas, transferências e pagamentos agendados para datas futuras ficam fora dos saldos atuais até o dia informado. Compras parceladas no crédito passam a compor a dívida total quando a primeira parcela chega à data; as parcelas seguintes continuam distribuídas nos meses correspondentes. O resultado do mês mostra o que já foi realizado, enquanto os lançamentos futuros continuam disponíveis para consulta e planejamento.
+Os saldos bancários e o resultado realizado consideram movimentações com data até hoje. Receitas, despesas e transferências programadas para datas futuras não alteram o dinheiro disponível antes da data informada. Compras parceladas no crédito são tratadas como compromissos desde o cadastro: a parcela com data neste mês aparece em “Crédito deste mês” e as demais ficam em “Parcelas futuras”. Ao cadastrar uma compra parcelada, informe somente a quantidade total de parcelas e escolha se o valor digitado é o total da compra ou o valor de cada parcela. O Luca gera a sequência completa de 1/N até N/N. Grupos antigos que já tenham outra numeração são preservados e continuam editáveis sem pedir a próxima parcela ou a quantidade restante. Pagamentos registrados reduzem primeiro os valores mais antigos. O Luca permite configurar fechamento e vencimento do cartão vinculado a uma conta bancária e comparar uma fatura com o CSV do banco em uma prévia que não altera dados automaticamente. As recorrências ativas com forma de pagamento Crédito também são projetadas em cada ciclo dos próximos 12 meses; a previsão é somente leitura, sai quando o lançamento real correspondente aparece e deixa de ser gerada quando a regra é pausada ou desativada. Lançamentos comuns podem ser duplicados para abrir um novo formulário preenchido, com data de hoje e sem alterar o original; ao duplicar uma parcela, somente aquela parcela é copiada. Saldo inicial de fatura permanece como dívida, sem ser contabilizado como nova despesa por categoria. O resumo de cartões agrupa os valores pelo ciclo real de fechamento e vencimento, destacando fatura atual, próximas faturas e total comprometido.
 
 ## Assistente e Telegram
 
-Você pode escrever de forma direta, por exemplo:
+Além de receitas, despesas e transferências, o Telegram possui um fluxo específico para compromissos pessoais. Envie `/novoacerto` ou abra `/devendo` e toque em “Novo valor a receber” ou “Novo valor a pagar”. O bot pergunta o nome da pessoa, o valor e o motivo, permite incluir vencimento/lembrete e exibe uma prévia antes de gravar. Use `/devendo` para consultar valores pendentes; para registrar baixas, escreva “Rafael me pagou R$ 40” ou “Paguei R$ 50 para Rafael”. Os pagamentos parciais são registrados no histórico do acerto e não criam automaticamente receitas/despesas, evitando duplicidade com o lançamento bancário que você registrar separadamente.
+
+Você também pode escrever de forma direta, por exemplo:
 
 - `Gastei 45,90 no almoço pelo Nubank no débito.`
 - `Recebi 2.400 de salário na Caixa.`
 - `Transferi 300 da Nubank para a conta poupança.`
 - `Paguei 120 de internet ontem no Pix.`
+- `Rafael me deve R$ 80 do jantar.`
+- `Devo R$ 50 para Rafael pela pizza.`
 
-O interpretador tenta identificar o tipo de movimentação, valor, data, descrição, categoria, conta, forma de pagamento e parcelas. Quando falta informação ou a frase permite mais de uma interpretação, o Luca pode pedir que você esclareça.
+O interpretador tenta identificar o tipo de movimentação, valor, data, descrição, categoria, conta, forma de pagamento e parcelas. Ele também consulta as categorias que você já usou para o mesmo estabelecimento. Quando você corrige uma categoria no painel ou na prévia do Telegram, o Luca aprende essa preferência para mensagens futuras do mesmo estabelecimento. Se o histórico estiver conflitante ou não houver correspondência segura, ele mantém a sugestão genérica para você revisar. Quando falta informação ou a frase permite mais de uma interpretação, o Luca pode pedir que você esclareça.
 
 Antes de gravar uma movimentação, o sistema apresenta uma prévia com as opções **Confirmar**, **Cancelar** e **Editar**. Pelo Telegram, você pode corrigir valor, descrição, categoria, conta, forma de pagamento, data, parcelas e observações antes de confirmar. O dicionário de expressões fica em [`app/financial_language_pt_br.json`](app/financial_language_pt_br.json), separado do código principal. Há exemplos adicionais em [`docs/catalogo-de-frases.md`](docs/catalogo-de-frases.md).
 

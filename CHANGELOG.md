@@ -1,3 +1,119 @@
+## 1.7.5 — projeção contínua de recorrências nas faturas
+
+- Recorrências ativas com forma de pagamento Crédito agora são projetadas em todas as ocorrências dos próximos 12 ciclos de cada cartão, respeitando frequência semanal, mensal ou anual e os dias originais de ancoragem.
+- A projeção é somente leitura: não avança a próxima data cadastrada e não cria lançamentos ou ocorrências no banco.
+- A tela “Ver fatura” calcula todas as ocorrências da regra dentro do ciclo selecionado, mesmo quando a próxima data registrada está em um mês anterior.
+- Quando existe um lançamento real/manual compatível por data, valor, forma de pagamento e descrição, ele substitui a previsão para evitar duplicidade.
+- Pausar ou desativar uma recorrência remove as projeções futuras; alterar o valor atualiza apenas as próximas previsões, preservando lançamentos históricos. Recorrências em Pix/Débito não entram nas faturas.
+- Pagamentos e estornos reduzem dívidas já lançadas, não previsões de cobranças que ainda não aconteceram.
+- O resumo das contas mostra quantas parcelas e previsões recorrentes compõem cada ciclo, e informa que o total comprometido considera os próximos 12 ciclos projetados.
+- **218 testes automatizados aprovados**, incluindo previsão de janeiro/2027 com R$ 347,33 em compras/parcelas + R$ 330,71 em recorrências = R$ 678,04.
+
+## 1.7.4 — frases rápidas para acertos pelo Telegram
+
+- Adicionadas as expressões “Cobrar R$ 80 do João”, “Cobrar 80 João”, “João me devendo R$ 80” e “Pagar R$ 50 para João”.
+- Mantida a prévia com confirmação obrigatória antes de criar compromissos.
+- Melhorada a extração do nome da pessoa quando o valor aparece antes ou depois do nome.
+- Atualizados os exemplos de `/ajuda`, `/start`, versão do aplicativo e cache de arquivos estáticos.
+- Nenhuma migração de banco de dados necessária.
+
+## 1.7.3 — cadastro guiado de acertos pessoais pelo Telegram
+
+- Adicionado o comando `/novoacerto` (também `/acerto` e `/novodevendo`) para cadastrar valores a receber ou a pagar por um fluxo guiado: direção, pessoa, valor/motivo e dados opcionais de vencimento/lembrete.
+- O fluxo mostra uma prévia e exige confirmação antes de criar o compromisso. `/cancelar` encerra o assistente sem gravar dados; o estado temporário expira após 20 minutos e é armazenado isoladamente no banco de cada perfil.
+- `/devendo` agora apresenta os compromissos abertos individualmente, com saldo pendente e vencimento, além de botões para iniciar um acerto a receber ou a pagar.
+- O menu de comandos do Telegram inclui `novoacerto`; a ajuda documenta exemplos de criação e baixa de compromissos.
+- O cadastro de acertos continua no livro auxiliar de pessoas (`friend_entries`/`friend_settlements`), sem alterar automaticamente saldos bancários ou classificar o mesmo valor como receita/despesa. Recebimentos e pagamentos parciais continuam com confirmação e validação de saldo.
+- Adicionada tabela de estado temporário do assistente guiado por perfil, criada de forma aditiva e com expiração automática.
+- **214 testes automatizados aprovados**, incluindo criação a receber/a pagar, confirmação, cancelamento, expiração do rascunho e validação de vencimento.
+- **Testes automatizados específicos para os fluxos a receber, a pagar, confirmação, cancelamento e atalhos em `/devendo`.**
+
+## 1.7.2 — aprendizagem de categorias e filtro por forma de pagamento
+
+- O histórico financeiro agora oferece filtro por forma de pagamento, incluindo métodos personalizados cadastrados pelo usuário.
+- Os endpoints de listagem simples e paginada aceitam `payment_method_id`; métodos padrão também encontram lançamentos legados sem referência de método, e a migração preenche as referências padrão ausentes.
+- O assistente do painel e do Telegram consulta o histórico do próprio perfil por descrição de estabelecimento normalizada e sugere a categoria já utilizada anteriormente. A prévia informa quando a classificação veio do histórico.
+- Categorias corrigidas pelo usuário no painel ou escolhidas manualmente na prévia do Telegram passam a ser preferências explícitas por estabelecimento, armazenadas no banco isolado daquele perfil.
+- Categorias explicitamente indicadas na mensagem têm prioridade sobre a aprendizagem. Histórico ambíguo não é usado para adivinhar, e lançamentos divididos por categorias não contaminam a aprendizagem do estabelecimento.
+- Adicionados índices para consultas do filtro de pagamento e para a leitura do histórico de classificação.
+- Migração aditiva cria a tabela de preferências de categoria e preserva todos os lançamentos existentes.
+- **208 testes automatizados aprovados.**
+
+## 1.7.1 — parcelamentos simplificados
+
+- Simplificado o cadastro de compras parceladas: o usuário informa apenas a quantidade total de parcelas e escolhe se o valor digitado representa o total da compra ou o valor de cada parcela.
+- Novas compras parceladas sempre são geradas de 1/N até N/N. O formulário não exibe nem envia campos de próxima parcela ou parcelas restantes.
+- O backend deixou de aceitar a criação manual de cronogramas parciais. O fluxo de criação é consistente no painel e nos lançamentos confirmados pelo Telegram.
+- Grupos antigos que já estão gravados com numeração posterior (por exemplo, 5/12 a 12/12) não são renumerados. Ao editar um grupo legado, o Luca identifica a sequência existente pelo próprio histórico.
+- O valor total é dividido em centavos de forma exata; o valor por parcela multiplica pela quantidade informada.
+- A API também rejeita os campos antigos de próxima parcela e parcelas restantes para novos cadastros, em vez de criar um cronograma parcial por engano.
+- Nenhuma migração de dados é necessária.
+- **198 testes automatizados aprovados.**
+
+## 1.7.0 — evolução da experiência e controle financeiro
+
+- Histórico paginado com filtro por categoria e navegação entre páginas.
+- Lançamentos podem ser divididos entre categorias sem alterar o movimento bancário; relatórios e limites consideram as partes.
+- Recorrências podem ser pausadas e reativadas sem perder a configuração.
+- Fechamento mensal com checklist e observações salvas por período.
+- Formulário de lançamento mais enxuto: parcelamento e saldo inicial ficam em opções avançadas.
+- Importação CSV protegida contra reimportação acidental do mesmo arquivo na mesma conta.
+- Endpoints de detalhe e grupo de parcelas não dependem do limite das 1.000 movimentações mais recentes.
+- Filtros por categoria e texto também encontram partes de lançamentos divididos.
+- **196 testes automatizados aprovados.**
+- Mantida a duplicação segura de lançamento e a compatibilidade com os perfis existentes.
+
+## 1.6.16 — duplicação segura de lançamentos e revisão de simplicidade
+
+- A lista de lançamentos oferece a ação **Duplicar**. Ela abre o formulário preenchido para revisão e grava uma nova movimentação somente após o usuário salvar.
+- A cópia recebe a data de hoje por padrão, preserva descrição, valor, categoria, conta, forma de pagamento e observações, e nunca altera o original.
+- Ao duplicar uma parcela, somente o valor daquela parcela é copiado como lançamento simples; o grupo original e as demais parcelas não são replicados. O usuário pode configurar um novo parcelamento antes de salvar.
+- Saldos iniciais consolidados de fatura não oferecem a ação de duplicar, evitando transformar uma dívida inicial em uma compra nova acidentalmente.
+- Removida do `.env.example` a opção `LUCA_ACCESS_PASSWORD`, que não era consumida pelo código e poderia sugerir uma camada de proteção que não existia. O login normal por perfil permanece inalterado.
+- Incluído um relatório de revisão geral com recomendações para agrupar a navegação, simplificar formulários e manter integrações opcionais fora do fluxo financeiro principal. Nenhuma funcionalidade financeira existente foi removida.
+- **186 testes automatizados aprovados.**
+
+## 1.6.15 — recorrências visíveis no detalhe da fatura
+- A tela “Ver fatura” inclui a próxima ocorrência das recorrências ativas com forma de pagamento Crédito quando a data cai dentro do ciclo selecionado.
+- Recorrências previstas aparecem com a identificação “PREVISTO” e entram no total da fatura. Quando a ocorrência é gerada ou lançada manualmente no mesmo dia e valor, a previsão é removida para evitar duplicidade.
+- A lista de recorrências passa a exibir a forma de pagamento, facilitando identificar quais regras devem compor o cartão.
+- A fatura do Luca continua sendo uma previsão baseada nos registros; o valor oficial é o exibido pelo emissor e deve ser conciliado.
+
+## 1.6.14 — resumo de crédito por ciclo de fatura
+- A área Minhas contas substitui os indicadores confusos de dívida anterior e crédito por mês de calendário por Fatura atual, Próximas faturas e Total comprometido.
+- Os valores passam a respeitar o dia de fechamento e o vencimento configurados em cada conta/cartão. Saldo inicial de fatura entra na fatura atual como valor consolidado.
+- Próximas faturas são discriminadas por data de fechamento e vencimento. A próxima ocorrência de recorrências ativas no crédito também entra na previsão e é substituída pelo lançamento real quando gerada, sem duplicidade. Eventuais faturas anteriores não quitadas continuam no total comprometido e aparecem em um aviso explicativo, sem ocupar um indicador separado.
+- A tela de detalhes da fatura inclui o saldo inicial consolidado; a prévia de conciliação também o considera no total do Luca sem tratá-lo como compra individual não conciliada.
+
+## 1.6.13 — recorrências automáticas, parcelamentos restantes e conciliação de fatura
+
+- Parcelamentos agora separam o total original do contrato, a próxima parcela efetiva e a quantidade de parcelas não pagas que serão cadastradas. A edição reconstrói apenas o cronograma restante, preservando o índice original da parcela.
+- O formulário aceita tanto o valor total da compra quanto o valor de cada parcela. O modo de valor total distribui centavos pela quantidade original, sem dividir apenas pelo saldo restante.
+- Recorrências são geradas automaticamente ao iniciar e verificadas a cada minuto. Uma tabela de ocorrências com unicidade por regra/data garante idempotência e permite recuperar vencimentos perdidos enquanto o app estava desligado. Regras mensais/anuais preservam o dia original mesmo após fevereiro ou meses curtos.
+- Lançamentos legados com a descrição exata `Fatura atual`/`Saldo inicial de fatura`, no crédito e em `Dívidas e financiamentos`, são classificados como saldo inicial. Continuam na dívida do cartão, mas ficam fora das despesas de consumo e dos relatórios por categoria.
+- Contas bancárias comuns aceitam dia de fechamento e vencimento do cartão vinculado. A tela de fatura exibe o ciclo configurado, incluindo o dia do fechamento anterior como início do período (ciclo 17 a 17).
+- Adicionada prévia de conciliação do CSV Nubank (colunas `date`, `title`, `amount`) com correspondência por data/valor, identificação de divergências e atalhos para cadastro/conferência. A comparação é somente leitura e não importa nem exclui registros automaticamente.
+- Guia de atualização documenta as sequências de parcelas que aparecem no CSV fornecido e reforça que grupos antigos não são reescritos automaticamente.
+- **179 testes automatizados aprovados.**
+
+## 1.6.12 — valor mensal das parcelas e composição correta do crédito futuro
+
+- O campo de valor em novos parcelamentos passou a representar o **valor de cada parcela**. Exemplo: R$ 124,16 em 12 vezes gera 12 parcelas de R$ 124,16 (total de R$ 1.489,92). A tela mostra o total calculado antes de salvar.
+- O interpretador de linguagem mantém a distinção: frases como “compra de R$ 1.500 em 5 parcelas” tratam o valor como total da compra; frases como “5 parcelas de R$ 300 cada” tratam o valor como parcela mensal.
+- O resumo de crédito agora inclui compromissos parcelados futuros mesmo quando a primeira data de parcela ainda não chegou. A parcela com data no mês atual aparece em “Crédito deste mês”; meses seguintes aparecem em “Parcelas futuras”. Lançamentos futuros sem parcelamento continuam fora do saldo realizado.
+- A edição de uma compra parcelada agora permite alterar a compra inteira de uma vez: valor por parcela, quantidade, descrição, categoria, conta, pagamento e data inicial. As linhas mensais são reconstruídas mantendo seus identificadores sempre que possível.
+- Corrigido o caso de uma compra criada com valor mensal tratado como valor total e dividida indevidamente pela quantidade de parcelas. Compras antigas não são alteradas automaticamente; abra uma parcela do grupo, edite a compra inteira e informe o valor mensal correto.
+- Adicionados testes para o exemplo Sócio Furacão (12x de R$ 124,16), data inicial futura no mês, distribuição de meses, atualização de grupo e FIFO de pagamentos.
+
+## 1.6.11 — composição do crédito pendente
+
+- A área “Minhas contas” agora separa o crédito pendente em meses anteriores em aberto, compras/parcelas com data neste mês, parcelas futuras e total restante.
+- O total continua incluindo toda a dívida efetiva ainda não quitada, inclusive parcelas dos próximos meses de compras cujo primeiro vencimento já chegou. Compras com data futura que ainda não começaram não entram na dívida atual.
+- Pagamentos de crédito e estornos reduzem os itens mais antigos primeiro (FIFO), para que a divisão por mês feche com o total restante.
+- O resumo mostra a quantidade de parcelas futuras ainda pendentes e a quantidade de compras/parcelas com data no mês atual.
+- A interface explica que a divisão utiliza as datas registradas nas compras/parcelas; não é uma fatura importada do emissor.
+- Incluídos testes para parcelamentos entre meses, pagamentos parciais, alocação de pagamentos, cartões do modelo antigo e reconciliação entre os subtotais e a dívida total.
+
 ## 1.6.10 — interpretação de valores falados com centavos
 - Corrige valores ditados como “40 reais, 25 centavos” e “40 reais e 25 centavos”, inclusive quando o Whisper usa vírgula como pausa.
 - Reconhece centavos numéricos ou escritos por extenso e remove a expressão monetária completa da descrição.
