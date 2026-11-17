@@ -1,3 +1,47 @@
+## 1.7.8 — edição do saldo inicial da conta
+
+- **Corrigido:** ao editar uma conta, o saldo inicial não era salvo — a tela dizia "atualizado", mas o valor continuava o mesmo. O botão da conta (antes "Fatura") agora é **Editar** e permite alterar nome, saldo inicial e, se houver cartão, fechamento e vencimento.
+- A API de edição de contas agora recusa campos desconhecidos com erro 422, em vez de responder sucesso sem salvar nada.
+- **Aviso de saldo negativo em transferências:** a transferência continua sendo gravada, mas o Luca avisa quando a conta de origem fica negativa e orienta a conferir o saldo inicial.
+- Alterar o saldo inicial muda o saldo atual na mesma proporção; os lançamentos existentes são mantidos.
+
+## 1.7.7 — revisão geral: segurança, robustez e conveniências
+
+### Correções
+
+- **Convite não é mais "queimado" por um erro de cadastro.** Se a pessoa convidada errar (senha curta, e-mail já cadastrado), o convite de uso único volta a ficar disponível para uma nova tentativa.
+- **Vincular o Telegram a partir de outra conta do Telegram** agora funciona. Antes, o Luca respondia "vinculado", mas mantinha o vínculo antigo.
+- **Uma recorrência com problema não bloqueia mais as outras.** Se a forma de pagamento de uma recorrência fosse arquivada, nenhuma recorrência do perfil era gerada. Agora cada regra é processada isoladamente; a forma arquivada cai para o tipo equivalente e regras de contas arquivadas aguardam a restauração da conta.
+- **Lançamento com forma de pagamento arquivada voltou a ser editável** (descrição, categoria, observações etc.). Só uma forma *recém-escolhida* precisa estar ativa.
+- **Edição de lançamentos validada.** Valor, data, descrição, categoria e tipo inválidos retornam uma mensagem clara em vez de erro interno — uma data inválida gravada podia quebrar o resumo e as faturas. Trocar apenas o tipo da forma (ex.: Débito → Pix) atualiza também o vínculo da forma de pagamento.
+- Uma parcela isolada não pode mais ser convertida em receita ou em forma diferente de Crédito, o que deixava o parcelamento inconsistente.
+- **Importação de CSV** não falha mais com erro interno: linhas com valor ou data inválidos são apontadas pelo número da linha e nada é importado até o arquivo estar correto. Aceita datas `dd/mm/aaaa`, `receita`/`despesa` e formas em português (`débito`, `dinheiro`...). A exportação grava o valor exato em centavos.
+- Configurações com identificadores inválidos e edição de compromissos com campos nulos retornam 422 em vez de erro interno. O envio de áudio pelo painel não carrega mais arquivos acima do limite na memória.
+
+### Segurança
+
+- **Limite de tentativas de login:** após 8 senhas erradas em 15 minutos para o mesmo e-mail e origem, novas tentativas são recusadas temporariamente. O tempo de resposta não revela mais se um e-mail possui cadastro.
+- **Troca de senha** em Configurações → Senha de acesso. Os outros dispositivos conectados são desconectados.
+- **Administradores podem desativar e reativar perfis** em Configurações → Usuários e convites. Os dados são preservados e o acesso é encerrado imediatamente. O último administrador ativo e o próprio usuário não podem ser desativados.
+- Cabeçalhos `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy` em todas as respostas.
+
+### Melhorias
+
+- **Backup automático diário** de todos os perfis em `data/backups/`, mantendo os últimos 7 dias (`LUCA_BACKUP_KEEP`; `0` desativa).
+- **Limites mensais: "Copiar do mês anterior"** repete os limites sem sobrescrever os que já existem no mês.
+- **Fuso horário em servidores Linux:** defina `TZ=America/Sao_Paulo` no `.env` para que "hoje", vencimentos e recorrências sigam o seu calendário.
+- **232 testes automatizados aprovados** (13 novos em `tests/test_hardening.py`).
+
+## 1.7.6 — integração de acertos com lançamentos bancários
+
+- Registrar um pagamento ou recebimento parcial/total em **Devendo / A receber** agora cria automaticamente a despesa/receita correspondente em **Lançamentos**.
+- O painel permite escolher a conta, a forma de pagamento e a data efetiva da movimentação. Cartões de crédito e a forma Crédito são excluídos desse fluxo para que a baixa represente dinheiro recebido ou pago. A criação automática pode ser desmarcada quando a movimentação já foi lançada manualmente.
+- A operação é atômica: a baixa e o lançamento são gravados juntos ou nenhum dos dois é persistido. O histórico vincula cada baixa a uma única movimentação.
+- Pagamentos futuros são registrados com data futura e só afetam o saldo na data indicada, preservando o cálculo de saldo realizado.
+- Lançamentos vinculados protegem valor, tipo, conta, forma de pagamento e data contra edição/exclusão direta. No histórico de acertos, a ação **Desfazer baixa** remove a baixa e sua movimentação vinculada em conjunto, reabrindo o saldo pendente.
+- Telegram usa a conta padrão do perfil e confirma a criação do movimento; o painel permite selecionar uma conta específica.
+- Migração aditiva adiciona `friend_settlements.transaction_id` e seu índice único parcial. Baixas antigas permanecem sem vínculo e não geram lançamentos retroativos, evitando duplicidades.
+
 ## 1.7.5 — projeção contínua de recorrências nas faturas
 
 - Recorrências ativas com forma de pagamento Crédito agora são projetadas em todas as ocorrências dos próximos 12 ciclos de cada cartão, respeitando frequência semanal, mensal ou anual e os dias originais de ancoragem.

@@ -26,7 +26,7 @@ if not exist ".env" copy ".env.example" ".env" >nul
 
 echo.
 echo =============================================
-echo   LUCA - ASSISTENTE FINANCEIRO v1.7.5
+echo   LUCA - ASSISTENTE FINANCEIRO v1.7.6
 echo =============================================
 echo Painel: http://127.0.0.1:8000
 echo API:    http://127.0.0.1:8000/docs

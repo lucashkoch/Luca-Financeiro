@@ -6,11 +6,19 @@ O Luca é um aplicativo para organizar as finanças pessoais. Nele você pode re
 
 Os lançamentos podem ser feitos pelo painel no navegador ou por uma conversa com o bot do Telegram. O assistente entende mensagens em português e mostra uma prévia para você conferir antes de salvar.
 
-**Versão atual:** 1.7.5  
+**Versão atual:** 1.7.8  
 
-### Novidades da versão 1.7.5
+### Novidades da versão 1.7.7
 
-As faturas de cartão agora projetam todas as cobranças de recorrências ativas no crédito pelos próximos 12 ciclos, respeitando o dia de fechamento e vencimento. As previsões não criam lançamentos e desaparecem quando a ocorrência real é registrada. Pausar ou cancelar uma recorrência remove as próximas previsões; recorrências em Pix ou Débito ficam fora da fatura. Consulte `GUIA-LUCA-1.7.5.md` para a atualização.
+Revisão geral de segurança e robustez: limite de tentativas de login, troca de senha pelo painel, desativação de perfis pelo administrador, backup automático diário em `data/backups/`, cópia dos limites mensais do mês anterior e correções em convites, vínculo do Telegram, recorrências, edição de lançamentos e importação de CSV. Não há migração de banco. Consulte `GUIA-LUCA-1.7.7.md` para a atualização.
+
+### Novidades da versão 1.7.6
+
+Baixas de compromissos em **Devendo / A receber** agora geram automaticamente a receita ou despesa correspondente em **Lançamentos**, na conta, forma de pagamento e data selecionadas. O histórico vincula os dois registros para evitar divergências e permite desfazer uma baixa junto com a movimentação correspondente; baixas antigas não geram lançamentos retroativos. A migração do banco é aditiva e ocorre na inicialização. Consulte `GUIA-LUCA-1.7.6.md` para a atualização.
+
+### Versão anterior: 1.7.5
+
+As faturas de cartão projetam todas as cobranças de recorrências ativas no crédito pelos próximos 12 ciclos, respeitando o dia de fechamento e vencimento. As previsões não criam lançamentos e desaparecem quando a ocorrência real é registrada. Pausar ou cancelar uma recorrência remove as próximas previsões; recorrências em Pix ou Débito ficam fora da fatura.
 
 **Requisitos:** Windows 10 ou 11 e Python 3.11 ou superior  
 **Licença:** MIT
@@ -34,7 +42,7 @@ Os saldos bancários e o resultado realizado consideram movimentações com data
 
 ## Assistente e Telegram
 
-Além de receitas, despesas e transferências, o Telegram possui um fluxo específico para compromissos pessoais. Envie `/novoacerto` ou abra `/devendo` e toque em “Novo valor a receber” ou “Novo valor a pagar”. O bot pergunta o nome da pessoa, o valor e o motivo, permite incluir vencimento/lembrete e exibe uma prévia antes de gravar. Use `/devendo` para consultar valores pendentes; para registrar baixas, escreva “Rafael me pagou R$ 40” ou “Paguei R$ 50 para Rafael”. Os pagamentos parciais são registrados no histórico do acerto e não criam automaticamente receitas/despesas, evitando duplicidade com o lançamento bancário que você registrar separadamente.
+Além de receitas, despesas e transferências, o Telegram possui um fluxo específico para compromissos pessoais. Envie `/novoacerto` ou abra `/devendo` e toque em “Novo valor a receber” ou “Novo valor a pagar”. O bot pergunta o nome da pessoa, o valor e o motivo, permite incluir vencimento/lembrete e exibe uma prévia antes de gravar. Use `/devendo` para consultar valores pendentes; para registrar baixas, escreva “Rafael me pagou R$ 40” ou “Paguei R$ 50 para Rafael”. Cada pagamento/recebimento parcial ou total também gera automaticamente uma despesa/receita vinculada ao acerto, usando a conta padrão do perfil e uma forma de pagamento diferente de Crédito. No painel, você pode escolher a conta, a forma de pagamento e a data da movimentação. A criação automática pode ser desmarcada quando a entrada/saída já tiver sido lançada manualmente.
 
 Você também pode escrever de forma direta, por exemplo:
 
